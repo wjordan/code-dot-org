@@ -1,7 +1,7 @@
 :css
   .contract select {
     color: white;
-    background-color: #999999;
+    background-color: #00ccff;
     margin-top: 10px;
   }
 
@@ -50,7 +50,7 @@
   - data = @level.properties
   - app = 'contract_match'
 
-  - options_to_colors = { None: "#999999", Number: "#00ccff", String: "#0099999", Image: "#9900cc", Boolean: "#336600" }
+  - options_to_colors = { Number: "#00ccff", String: "#0099999", Image: "#9900cc", Boolean: "#336600" }
 
   .mainblock
     = render partial: 'levels/content', locals: {app: app, data: data}
@@ -63,7 +63,7 @@
         %option{"data-color" => "#{color}"}= type_name
     #sectionTitle Domain
     %div
-      %input#domainItemText{type: 'text', placeholder: 'Name'}
+      -#%input#domainItemText{type: 'text', placeholder: 'Name'}
       %select#domainInput
         - options_to_colors.each do |type_name, color|
           %option{"data-color" => "#{color}"}= type_name
@@ -84,7 +84,7 @@
     $div.css("background-color", $(domainOptionSelected).data("color"));
     var $button = $('<button class="domain-x-button">x</button>');
     $div.append($button);
-    $div.append($('<div/>').text(domainItemText + ':' + domainInput).addClass('domainItemText'));
+    $div.append($('<div/>').text(domainInput).addClass('domainItemText'));
     $button.click(function(event) {
       $(event.target.parentElement).remove();
     });
@@ -104,8 +104,7 @@
       return $(element).find('.domainItemText')[0].textContent;
      });
 
-    // Order domain inputs alphabetically sorted
-    var domainInput = $.makeArray(items).slice().sort().join('|');
+    var domainInput = $.makeArray(items).slice().join('|');
     var response = functionName + '|' + rangeInput + '|' + domainInput;
     console.log('input="' + response + '"');
     var result = #{data['answers'].to_json}.some(function(element) {

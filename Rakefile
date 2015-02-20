@@ -68,9 +68,9 @@ namespace :build do
 
       HipChat.log 'Building <b>apps</b>...'
       if CDO.localize_apps
-        RakeUtils.system 'MOOC_LOCALIZE=1', 'grunt build'
+        RakeUtils.system 'MOOC_LOCALIZE=1', 'grunt'
       else
-        RakeUtils.system 'grunt build'
+        RakeUtils.system 'grunt'
       end
     end
   end

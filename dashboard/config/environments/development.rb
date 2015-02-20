@@ -57,4 +57,6 @@ Dashboard::Application.configure do
 
   # see stack traces around sql queries in the log
   # ActiveRecordQueryTrace.enabled = true
+
+  config.react.variant = :development
 end

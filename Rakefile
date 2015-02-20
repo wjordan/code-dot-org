@@ -68,9 +68,9 @@ namespace :build do
 
       HipChat.log 'Building <b>apps</b>...'
       if CDO.localize_apps
-        RakeUtils.system 'MOOC_LOCALIZE=1', 'grunt'
+        RakeUtils.system 'MOOC_LOCALIZE=1', 'grunt build'
       else
-        RakeUtils.system 'grunt'
+        RakeUtils.system 'grunt build'
       end
     end
   end
@@ -113,7 +113,7 @@ namespace :build do
       end
     end
   end
-  
+
   task :jupiter do
     Dir.chdir(jupiter_dir) do
       HipChat.log 'Stopping JUPITER service'

@@ -91,8 +91,9 @@ class Level < ActiveRecord::Base
     level_path = level_file_path(name) || raise("Level #{name} not found")
     level = (levels[name] || Level.find_or_create_by(name: name))
     # Only reload level data when file contents change
-    level.md5 = Digest::MD5.file(level_path).hexdigest
-    load_custom_level_xml(File.read(level_path), level) if level.changed?
+    level_data = File.read(level_path)
+    level.md5 = Digest::MD5.hexdigest(level_data)
+    load_custom_level_xml(level_data, level) if level.changed?
     level
   end
 

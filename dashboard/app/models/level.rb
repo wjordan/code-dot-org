@@ -77,7 +77,7 @@ class Level < ActiveRecord::Base
   def self.load_custom_levels
     levels = Level.includes(:game).all.index_by(&:name)
     Dir.glob(Rails.root.join('config/scripts/**/*.level')).sort.map do |path|
-      load_custom_level(levels, File.basename(path, File.extname(path)))
+      load_custom_level(levels, path)
     end
   end
 
@@ -87,8 +87,8 @@ class Level < ActiveRecord::Base
     level_paths.first
   end
 
-  def self.load_custom_level(levels, name)
-    level_path = level_file_path(name) || raise("Level #{name} not found")
+  def self.load_custom_level(levels, level_path)
+    name = File.basename(level_path, File.extname(level_path))
     level = (levels[name] || Level.find_or_create_by(name: name))
     # Only reload level data when file contents change
     level_data = File.read(level_path)

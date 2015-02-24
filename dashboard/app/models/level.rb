@@ -75,8 +75,9 @@ class Level < ActiveRecord::Base
   end
 
   def self.load_custom_levels
+    levels = Level.includes(:game).all.index_by(&:name)
     Dir.glob(Rails.root.join('config/scripts/**/*.level')).sort.map do |path|
-      load_custom_level(File.basename(path, File.extname(path)))
+      load_custom_level(levels, File.basename(path, File.extname(path)))
     end
   end
 
@@ -86,28 +87,32 @@ class Level < ActiveRecord::Base
     level_paths.first
   end
 
-  def self.load_custom_level(name)
+  def self.load_custom_level(levels, name)
     level_path = level_file_path(name) || raise("Level #{name} not found")
-    load_custom_level_xml(File.read(level_path), name)
+    level = (levels[name] || Level.find_or_create_by(name: name))
+    # Only reload level data when file contents change
+    level.md5 = Digest::MD5.file(level_path).hexdigest
+    load_custom_level_xml(File.read(level_path), level) if level.changed?
+    level
   end
 
-  def self.load_custom_level_xml(xml, name)
-    level_xml = Nokogiri::XML(xml)
-    type = level_xml.root.name
-    transaction do
-      level = Level.find_or_create_by(name: name).with_type(type)
-      level.load_level_xml(xml)
-    end
-  end
+  def self.load_custom_level_xml(xml, level)
+    xml_node = Nokogiri::XML(xml, &:noblanks)
+    level = level.with_type(xml_node.root.name)
 
-  def load_level_xml(xml)
-    json = Nokogiri::XML(xml, &:noblanks).xpath('//../config').first.text
-    level_hash = JSON.parse(json)
     # Delete entries for all other attributes that may no longer be specified in the xml.
     # Fixes issue #75863324 (delete removed level properties on import)
-    write_attribute('properties', {})
-    update!(level_hash)
-    self
+    level.send(:write_attribute, 'properties', {})
+    level.assign_attributes(level.load_level_xml(xml_node))
+
+    level.save! if level.changed?
+    level
+  end
+
+  # Input: xml level file definition
+  # Output: Hash of level properties
+  def load_level_xml(xml_node)
+    JSON.parse(xml_node.xpath('//../config').first.text)
   end
 
   def self.write_custom_levels

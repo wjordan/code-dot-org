@@ -82,55 +82,38 @@ Blockly.removeClass_ = function(element, className) {
 
 /**
  * Bind an event to a function call.
- * @param {!Element} element Element upon which to listen.
+ * @param {!Node} node Node upon which to listen.
  * @param {string} name Event name to listen to (e.g. 'mousedown').
  * @param {Object} thisObject The value of 'this' in the function.
  * @param {!Function} func Function to call when event is triggered.
  * @return {!Array.<!Array>} Opaque data that can be passed to unbindEvent_.
  * @private
  */
-Blockly.bindEvent_ = function(element, name, thisObject, func) {
-  var bindData = [];
-  var wrapFunc;
-  if (!element.addEventListener) {
-    throw 'Element is not a DOM node with addEventListener.';
-  }
-  wrapFunc = function(e) {
-    func.apply(thisObject, arguments);
+Blockly.bindEvent_ = function(node, name, thisObject, func) {
+  var wrapFunc = function(e) {
+    func.call(thisObject, e);
   };
+  node.addEventListener(name, wrapFunc, false);
+  var bindData = [[node, name, wrapFunc]];
   // Add equivalent touch event.
-  var equivTouchEvent = Blockly.bindEvent_.TOUCH_MAP[name];
-  if (equivTouchEvent) {
-    // Also bind the mouse event, unless the browser supports pointer events.
-    if (!window.navigator.pointerEnabled && !window.navigator.msPointerEnabled) {
-      element.addEventListener(name, wrapFunc, false);
-      bindData.push([element, name, wrapFunc]);
-    }
-    wrapFunc = function (e) {
-      if (e.target && e.target.style) {
-        var targetStyle = e.target.style;
-        if (targetStyle.touchAction) {  // required for IE 11+
-          targetStyle.touchAction = "none";
-        } else if (targetStyle.msTouchAction) {  // required for IE 10
-          targetStyle.msTouchAction = "none";
-        }
-      }
-
+  if (name in Blockly.bindEvent_.TOUCH_MAP) {
+    wrapFunc = function(e) {
       // Punt on multitouch events.
-      var touchPoints = e.changedTouches || [e];
-      for (var i = 0; i < touchPoints.length; ++i) {
+      if (e.changedTouches.length == 1) {
         // Map the touch event's properties to the event.
-        e.clientX = touchPoints[i].clientX;
-        e.clientY = touchPoints[i].clientY;
-
-        func.apply(thisObject, arguments);
+        var touchPoint = e.changedTouches[0];
+        e.clientX = touchPoint.clientX;
+        e.clientY = touchPoint.clientY;
       }
+      func.call(thisObject, e);
+      // Stop the browser from scrolling/zooming the page.
+      e.preventDefault();
     };
-    element.addEventListener(equivTouchEvent, wrapFunc, false);
-    bindData.push([element, equivTouchEvent, wrapFunc]);
-  } else {
-    element.addEventListener(name, wrapFunc, false);
-    bindData.push([element, name, wrapFunc]);
+    for (var i = 0, eventName;
+         eventName = Blockly.bindEvent_.TOUCH_MAP[name][i]; i++) {
+      node.addEventListener(eventName, wrapFunc, false);
+      bindData.push([node, eventName, wrapFunc]);
+    }
   }
   return bindData;
 };

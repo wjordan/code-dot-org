@@ -43,6 +43,14 @@ Scenario:
   And I see no difference for "level load"
   And I close my eyes
 
+Scenario:
+  When I open my eyes to test "msm contract assessment"
+  Given I am on "http://learn.code.org/s/algebra/stage/5/puzzle/8"
+  And I rotate to landscape
+  And I wait for 3 seconds
+  And I see no difference for "level load"
+  And I close my eyes
+
 Scenario Outline: Simple blockly level page view
   When I open my eyes to test "<test_name>"
   And I am on "<url>"

@@ -108,3 +108,14 @@ Examples:
   | http://learn.code.org/s/course4/stage/15/puzzle/10?noautoplay=true | auto open function editor |
   | http://learn.code.org/s/msm/stage/10/puzzle/5?noautoplay=true      | auto open contract editor |
   | http://learn.code.org/s/msm/stage/6/puzzle/6?noautoplay=true       | auto open variable editor |
+
+Scenario Outline: Simple page load
+  When I open my eyes to test "<test_name>"
+  And I am on "<url>"
+  When I rotate to landscape
+  And I see no difference for "initial load"
+  And I close my eyes
+Examples:
+  | url                                                                | test_name                 |
+  | http://code.org | homepage load |
+

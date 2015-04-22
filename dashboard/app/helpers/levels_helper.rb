@@ -134,8 +134,8 @@ module LevelsHelper
 
   # Code for generating the blockly options hash
   def blockly_options(local_assigns={})
-    # Use values from properties json when available (use String keys instead of Symbols for consistency)
-    level = @level.properties.dup || {}
+    props = @level.properties
+    level = {}
 
     # Set some specific values
     level['puzzle_number'] = @script_level ? @script_level.position : 1
@@ -162,14 +162,14 @@ module LevelsHelper
       success_condition: 'fn_successCondition',
       failure_condition:' fn_failureCondition',
     }
-    level.keys.each do |dashboard|
+    props.keys.each do |dashboard|
       blockly = overrides[dashboard.to_sym] || dashboard.camelize(:lower)
       # Select first valid value from 1. local_assigns, 2. property of @level object, 3. named instance variable, 4. properties json
       # Don't override existing valid (non-nil/empty) values
       property = local_assigns[dashboard.to_sym].presence ||
         @level[dashboard].presence ||
         instance_variable_get("@#{dashboard}").presence ||
-        level[dashboard].presence
+        props[dashboard].presence
       value = blockly_value(level[blockly] || property)
       level[blockly] = value unless value.nil? # make sure we convert false
     end

@@ -139,6 +139,8 @@ Calc.init = function(config) {
   config.grayOutUndeletableBlocks = true;
   config.forceInsertTopBlock = 'functional_compute';
   config.enableShowCode = false;
+  config.pinWorkspaceToBottom = true;
+  config.blocklyScrollbars = true;
 
   config.html = page({
     assetUrl: studioApp.assetUrl,
@@ -152,7 +154,8 @@ Calc.init = function(config) {
       idealBlockNumber : undefined,
       editCode: level.editCode,
       blockCounterClass : 'block-counter-default',
-      inputOutputTable: level.inputOutputTable
+      inputOutputTable: level.inputOutputTable,
+      pinWorkspaceToBottom: true
     }
   });
 

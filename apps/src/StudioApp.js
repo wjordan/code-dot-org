@@ -1296,7 +1296,7 @@ StudioApp.prototype.handleUsingBlockly_ = function (config) {
     useContractEditor: utils.valueOr(config.level.useContractEditor, false),
     disableExamples: utils.valueOr(config.level.disableExamples, false),
     defaultNumExampleBlocks: utils.valueOr(config.level.defaultNumExampleBlocks, 2),
-    scrollbars: config.level.scrollbars,
+    scrollbars: config.level.scrollbars || config.blocklyScrollbars,
     editBlocks: utils.valueOr(config.level.edit_blocks, false)
   };
   ['trashcan', 'varsInGlobals', 'grayOutUndeletableBlocks',

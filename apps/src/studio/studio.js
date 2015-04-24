@@ -1054,6 +1054,8 @@ Studio.init = function(config) {
   // whether or not that's desired in our other courses.
   var isAlgebraLevel = !!level.useContractEditor;
   config.grayOutUndeletableBlocks = isAlgebraLevel;
+  config.pinWorkspaceToBottom = isAlgebraLevel;
+  config.blocklyScrollbars = isAlgebraLevel;
 
   loadLevel();
 
@@ -1082,7 +1084,8 @@ Studio.init = function(config) {
       idealBlockNumber: undefined,
       editCode: level.editCode,
       blockCounterClass: 'block-counter-default',
-      inputOutputTable: level.inputOutputTable
+      inputOutputTable: level.inputOutputTable,
+      pinWorkspaceToBottom: isAlgebraLevel
     }
   });
 

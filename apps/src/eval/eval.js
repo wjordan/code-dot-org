@@ -77,6 +77,8 @@ Eval.init = function(config) {
   config.grayOutUndeletableBlocks = true;
   config.forceInsertTopBlock = 'functional_display';
   config.enableShowCode = false;
+  config.pinWorkspaceToBottom = true;
+  config.blocklyScrollbars = true;
 
   config.html = page({
     assetUrl: studioApp.assetUrl,
@@ -89,6 +91,7 @@ Eval.init = function(config) {
       blockUsed : undefined,
       idealBlockNumber : undefined,
       editCode: level.editCode,
+      pinWorkspaceToBottom: true,
       blockCounterClass : 'block-counter-default'
     }
   });

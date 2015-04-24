@@ -134,15 +134,15 @@ Blockly.parseOptions_ = function(options) {
       grayOutUndeletableBlocks = false;
     }
   }
-  if (tree && !hasCategories) {
+//  if (tree && !hasCategories) {
     // Scrollbars are not compatible with a non-flyout toolbox.
-    hasScrollbars = false;
-  } else {
+//    hasScrollbars = false;
+//  } else {
     hasScrollbars = options['scrollbars'];
     if (hasScrollbars === undefined) {
       hasScrollbars = false;
     }
-  }
+//  }
   return {
     RTL: !!options['rtl'],
     collapse: hasCollapse,

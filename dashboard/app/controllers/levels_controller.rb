@@ -26,7 +26,7 @@ class LevelsController < ApplicationController
     set_videos_and_callouts
     view_options(
         full_width: true,
-        no_footer: @game == Game.applab
+        no_footer: (@game == Game.applab || @game == Game.calc || @game == Game.eval || (@game.playlab? && @level.use_contract_editor))
     )
   end
 

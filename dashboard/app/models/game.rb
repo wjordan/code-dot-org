@@ -73,6 +73,10 @@ class Game < ActiveRecord::Base
     app == FLAPPY
   end
 
+  def playlab?
+    app == PLAYLAB
+  end
+
   def uses_droplet?
     name == "MazeEC" || name == "ArtistEC" || name == "Applab" || name == "StudioEC"
   end

@@ -1284,7 +1284,7 @@ StudioApp.prototype.handleEditCode_ = function (options) {
 
     // Ensure global ace variable is the same as window.ace
     // (important because they can be different in our test environment)
-  
+
     /* jshint ignore:start */
     ace = window.ace;
     /* jshint ignore:end */
@@ -1317,7 +1317,7 @@ StudioApp.prototype.handleEditCode_ = function (options) {
       enableLiveAutocompletion: true
     });
 
-    this.dropletTooltipManager = new DropletTooltipManager();
+    this.dropletTooltipManager = new DropletTooltipManager(this.Dialog);
     this.dropletTooltipManager.registerBlocksFromList(
       dropletUtils.getAllAvailableDropletBlocks(options.dropletConfig));
 

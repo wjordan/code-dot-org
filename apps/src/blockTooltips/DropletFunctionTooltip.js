@@ -119,5 +119,14 @@ DropletFunctionTooltip.prototype.i18nPrefix = function () {
 DropletFunctionTooltip.prototype.getFullDocumentationURL = function () {
   return 'http://code.org/applab/docs/' + this.functionName;
 };
+/**
+ * @returns {string} URL for full doc about this function
+ */
+DropletFunctionTooltip.prototype.getEmbedDocumentationURL = function () {
+  return "/notes/flappy_intro";
+
+  // TODO: once X-FRAME-OPTIONS is set to allow all for these URLs—
+  //return 'http://code.org/applab/docs/' + this.functionName + '/embed';
+};
 
 module.exports = DropletFunctionTooltip;

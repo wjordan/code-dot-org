@@ -86,6 +86,14 @@ DropletAutocompleteParameterTooltipManager.prototype.updateParameterTooltip_ = f
   this.getCursorTooltip_().tooltipster('content',
     this.getTooltipHTML(tooltipInfo, currentParameterIndex));
   this.getCursorTooltip_().tooltipster('show');
+  $('.tooltipster-content')
+    .last()
+    .find('a')
+    .click(function (e) {
+      this.dropletTooltipManager.popupDocForFunction(functionName);
+      e.preventDefault();
+      return false;
+    }.bind(this));
 };
 
 DropletAutocompleteParameterTooltipManager.prototype.getCursorTooltip_ = function () {

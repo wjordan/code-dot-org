@@ -105,6 +105,15 @@ DropletAutocompletePopupTooltipManager.prototype.updateAutocompletePopupTooltip 
   var rowOverlayDiv = $('.ace_selected');
   rowOverlayDiv.tooltipster(configuration);
   rowOverlayDiv.tooltipster('show');
+
+  $('.tooltipster-content')
+    .last()
+    .find('a')
+    .click(function (e) {
+      this.dropletTooltipManager.popupDocForFunction(funcName);
+      e.preventDefault();
+      return false;
+    }.bind(this));
 };
 
 DropletAutocompletePopupTooltipManager.prototype.destroyAutocompleteTooltips_ = function () {

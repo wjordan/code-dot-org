@@ -1263,3 +1263,12 @@ $see-examples-thick-underline-color: $yellow-dark;
 .droplet-hover-div {
   max-width: 100% !important;
 }
+
+.documentation-iframe-outer {
+  padding: 0;
+  height: 400px; // TODO: don't hard-code, do something like header.js.erb
+}
+.documentation-iframe {
+  width: 100%;
+  height: 100%;
+}

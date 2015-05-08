@@ -13,7 +13,10 @@ var DropletAutocompleteParameterTooltipManager = require('./DropletAutocompleteP
  * Store for finding tooltips for blocks
  * @constructor
  */
-function DropletTooltipManager() {
+function DropletTooltipManager(dialog) {
+
+  this.Dialog = dialog;
+
   /**
    * Map of block types to tooltip objects
    * @type {Object.<String, DropletFunctionTooltip>}
@@ -38,6 +41,15 @@ function DropletTooltipManager() {
    */
   this.dropletAutocompleteParameterTooltipManager_ = new DropletAutocompleteParameterTooltipManager(this);
 }
+
+DropletTooltipManager.prototype.popupDocForFunction = function (functionName) {
+  var dialog = new this.Dialog({
+    body: '<div class="documentation-iframe-outer">' +
+    '<iframe class="documentation-iframe" src="' + this.getDropletTooltip(functionName).getEmbedDocumentationURL() + '"/>'
+    + '</div>'
+  });
+  dialog.show();
+};
 
 /**
  * Registers handlers for droplet block tooltips.

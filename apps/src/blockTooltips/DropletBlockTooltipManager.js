@@ -72,6 +72,15 @@ DropletBlockTooltipManager.prototype.installTooltipsForCurrentCategoryBlocks = f
     });
 
     $(blockHoverDiv).tooltipster(configuration);
+
+    $('.tooltipster-content')
+      .last()
+      .find('a')
+      .click(function (e) {
+        this.dropletTooltipManager.popupDocForFunction(funcName);
+        e.preventDefault();
+        return false;
+      }.bind(this));
   }.bind(this));
 };
 

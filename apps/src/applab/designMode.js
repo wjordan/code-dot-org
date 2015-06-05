@@ -153,11 +153,25 @@ designMode.onPropertyChange = function(element, name, value) {
       element.style.fontSize = value + 'px';
       break;
     case 'image':
+      // TODO - different for screen vs. button
+      // TODO - image already loaded
+      var backgroundImage = new Image();
+      backgroundImage.onload = function(){
+         element.style.backgroundImage = 'url(' + backgroundImage.src + ')';
+         element.style.width = backgroundImage.naturalWidth + 'px';
+         element.style.height = backgroundImage.naturalHeight + 'px';
+         // Re-render properties
+         if (currentlyEditedElement === element) {
+           designMode.editElementProperties(element);
+         }
+      };
+      backgroundImage.src = value;
+
       // For now, we stretch the image to fit the element
-      var width = parseInt(element.style.width, 10);
-      var height = parseInt(element.style.height, 10);
-      element.style.backgroundImage = 'url(' + value + ')';
-      element.style.backgroundSize = width + 'px ' + height + 'px';
+      // var width = parseInt(element.style.width, 10);
+      // var height = parseInt(element.style.height, 10);
+      // element.style.backgroundImage = 'url(' + value + ')';
+      // element.style.backgroundSize = width + 'px ' + height + 'px';
       break;
     case 'picture':
       element.src = value;

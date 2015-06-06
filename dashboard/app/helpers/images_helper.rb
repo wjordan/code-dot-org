@@ -77,7 +77,6 @@ module ImagesHelper
 
     image.format = image_format
 
-    expires_in 1.hours, public: true, must_revalidate: true
     render body: image.to_blob, content_type: content_type_from_extname(extname)
   end
 

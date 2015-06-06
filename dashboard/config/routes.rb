@@ -280,4 +280,7 @@ Dashboard::Application.routes.draw do
   #     # (app/controllers/admin/products_controller.rb)
   #     resources :products
   #   end
+
+  get '/images/*path', to: 'pages#image'
+  get '*path', to: 'pages#page'
 end

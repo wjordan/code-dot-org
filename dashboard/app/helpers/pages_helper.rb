@@ -12,8 +12,8 @@ module PagesHelper
 
   #
   # Search the app/pages/ directory for the most appropriate file to render this page, starting in
-  # the current channel's directory and then checking the root (shared) directory. "index" is the
-  # file rendered if the URI referenes just a directory name.
+  # the current sites's directory and then checking the shared directory. "index" is the
+  # file rendered if the URI referenes just a directory name. "splat" is used for wildcard pages.
   #
   # The goal is to allow common content to exist in the root with site-specific content and/or
   # overrides to exist in the channel specific directory.

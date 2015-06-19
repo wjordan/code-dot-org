@@ -48,10 +48,14 @@
 
 #divApplab.appModern.divApplabDesignMode {
 
-  img[src=''], canvas {
+  img[src='']:before, canvas:before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
+    left: 1px;
     border: 5px solid #fff;
-    outline: 1px solid #bdc3c7;
-    outline-offset: -1px;
   }
 
   img[src=''] {

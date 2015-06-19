@@ -180,7 +180,7 @@ class LevelsHelperTest < ActionView::TestCase
   test 'applab levels should have channels' do
     @user = create :user
     sign_in @user
-    self.stubs(:current_user).returns @user
+    self.stubs(:current_user).returns nil
 
     @level = create :applab
     assert_not_nil app_options['channel']

@@ -1,0 +1,10 @@
+title 'Debugging Demo'
+description_short "Levels for the debugging demo."
+description "Levels for the debugging demo."
+
+stage 'Hello World'
+skin 'birds'
+level 'blockly:Maze:2_2'
+
+stage 'Bugs'
+level '2015_hoc'

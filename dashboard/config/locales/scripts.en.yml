@@ -949,3 +949,9 @@ en:
           description_short: Use Play Lab to create a story or game.
           description: Use Play Lab to create a story or game.
           Hour of Code: Hour of Code
+        bugbug:
+          Bugs: Bugs
+          title: Debugging Demo
+          description_short: Levels for the debugging demo.
+          description: Levels for the debugging demo.
+          Hello World: Hello World

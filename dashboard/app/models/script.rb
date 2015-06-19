@@ -258,7 +258,8 @@ class Script < ActiveRecord::Base
         level = level.with_type(row.delete(:type) || 'Blockly') if level.type.nil?
         level.update(row)
       elsif row[:video_key]
-        level.update(video_key: row[:video_key])
+        # BUGBUB: we should do something with row[:video_key]
+        bugbug = row[:video_key]
       end
 
       unless level

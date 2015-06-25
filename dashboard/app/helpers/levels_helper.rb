@@ -39,14 +39,20 @@ module LevelsHelper
       params = Hash[params]
       params['expires'] = Time.parse params['expires']
 
-      cookies[name] = params.merge(value: value)
+      cookies[name] = params.merge(value: CGI.unescape(value))
     end
 
     # Return the newly created channel ID.
     headers['Location'].split('/').last
   end
 
-  def set_channel
+  # Sets a channel for standalone projects (channel changes on each visit)
+  def set_standalone_project_channel
+    view_options channel: create_new_channel(state: 'inactive')
+  end
+
+  # Sets a channel for an embedded project level (channel is the same for each visit)
+  def set_embedded_project_channel
     # This is only supported for logged-in users because the ChannelTokens table
     # requires a user_id.
     return unless current_user
@@ -110,8 +116,11 @@ module LevelsHelper
 
   # Options hash for all level types
   def app_options
-    # Provide the channel for templated and applab levels.
-    set_channel if @level.project_template_level || @level.game == Game.applab
+    if ProjectsController::STANDALONE_PROJECTS.values.include? @level.name
+      set_standalone_project_channel
+    elsif @level.project_template_level || @level.game == Game.applab
+      set_embedded_project_channel
+    end
 
     # Set videos and callouts.
     view_options(

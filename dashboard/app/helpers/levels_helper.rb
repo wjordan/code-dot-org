@@ -20,9 +20,35 @@ module LevelsHelper
     "#{root_url.chomp('/')}#{path}"
   end
 
+  def create_new_channel(data)
+    result = ChannelsApi.call(request.env.merge(
+      'REQUEST_METHOD' => 'POST',
+      'PATH_INFO' => '/v3/channels',
+      'REQUEST_PATH' => '/v3/channels',
+      'CONTENT_TYPE' => 'application/json;charset=utf-8',
+      'rack.input' => StringIO.new(data.to_json)
+    ))
+
+    headers = result[1]
+    set_cookie = headers['Set-Cookie']
+
+    # ChannelsApi may modify the storage_id cookie, so copy the new value back to the response.
+    if set_cookie
+      params = set_cookie.split(';').map{|token| token.strip.split('=')}
+      name, value = params.shift
+      params = Hash[params]
+      params['expires'] = Time.parse params['expires']
+
+      cookies[name] = params.merge(value: value)
+    end
+
+    # Return the newly created channel ID.
+    headers['Location'].split('/').last
+  end
+
   def set_channel
-    # This only works for logged-in users because the storage_id cookie is not
-    # sent back to the client if it is modified by ChannelsApi.
+    # This is only supported for logged-in users because the ChannelTokens table
+    # requires a user_id.
     return unless current_user
 
     # The channel should be associated with the template level, if present.
@@ -34,13 +60,7 @@ module LevelsHelper
     channel_token = retryable on: [Mysql2::Error, ActiveRecord::RecordNotUnique], matching: /Duplicate entry/ do
       ChannelToken.find_or_create_by!(level: host_level, user: current_user) do |ct|
         # Get a new channel_id.
-        ct.channel = ChannelsApi.call(request.env.merge(
-          'REQUEST_METHOD' => 'POST',
-          'PATH_INFO' => '/v3/channels',
-          'REQUEST_PATH' => '/v3/channels',
-          'CONTENT_TYPE' => 'application/json;charset=utf-8',
-          'rack.input' => StringIO.new('{"hidden":"true"}')
-        ))[1]['Location'].split('/').last
+        ct.channel = create_new_channel(hidden: true)
       end
     end
 

@@ -254,14 +254,14 @@ Blockly.Block.isFreelyDragging = function() {
 
 /**
  * Wrapper function called when a mouseUp occurs during a drag operation.
- * @type {Array.<!Array>}
+ * @type {bindData}
  * @private
  */
 Blockly.Block.onMouseUpWrapper_ = null;
 
 /**
  * Wrapper function called when a mouseMove occurs during a drag operation.
- * @type {Array.<!Array>}
+ * @type {bindData}
  * @private
  */
 Blockly.Block.onMouseMoveWrapper_ = null;
@@ -272,15 +272,18 @@ Blockly.Block.onMouseMoveWrapper_ = null;
  */
 Blockly.Block.terminateDrag_ = function() {
   if (Blockly.Block.onMouseUpWrapper_) {
+    console.log("Mouse up terminatedrag");
     Blockly.unbindEvent_(Blockly.Block.onMouseUpWrapper_);
     Blockly.Block.onMouseUpWrapper_ = null;
   }
   if (Blockly.Block.onMouseMoveWrapper_) {
+    console.log("Mouse up terminatedrag");
     Blockly.unbindEvent_(Blockly.Block.onMouseMoveWrapper_);
     Blockly.Block.onMouseMoveWrapper_ = null;
   }
   var selected = Blockly.selected;
   if (Blockly.Block.isFreelyDragging()) {
+    console.log("Freely dragging terminatedrag");
     // Terminate a drag operation.
     if (selected) {
       // Update the connection locations.
@@ -302,13 +305,17 @@ Blockly.Block.terminateDrag_ = function() {
   // the cursor change so that the editor's SVG gets a cursor change
   // as well.
   if (selected) {
+    console.log("Selected block editor cursor change");
+
     selected.blockSpace.fireChangeEvent();
     selected.blockSpace.blockSpaceEditor.setCursor(Blockly.Css.Cursor.OPEN);
   } else {
     // If not, at least trigger a cursor change on blocks.
     Blockly.Css.setCursor(Blockly.Css.Cursor.OPEN, null);
+    console.log("Set cursor open");
   }
   Blockly.Block.dragMode_ = Blockly.Block.DRAG_MODE_NOT_DRAGGING;
+  console.log("setting to not dragging");
 };
 
 /**
@@ -590,13 +597,18 @@ Blockly.Block.prototype.getHeightWidth = function() {
  * @private
  */
 Blockly.Block.prototype.onMouseDown_ = function(e) {
-  // Stop the browser from scrolling/zooming the page
+
+  console.log("Block onmousedown (preventdefault)");
+
+  // Stop the browser from scrolling/zooming the page/selecting block text
   e.preventDefault();
 
   // If we're clicking on an input target, don't do anything with the event
   // at the block level
   var targetClass = e.target.getAttribute && e.target.getAttribute('class');
   if (targetClass === 'inputClickTarget') {
+    console.log("Clicking an input");
+
     e.stopPropagation();
     return;
   }
@@ -606,6 +618,8 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
     && document.activeElement.blur();
 
   if (this.isInFlyout) {
+    console.log("I think this block's in a flyout! Stop dragging it!");
+
     return;
   }
   // Update Blockly's knowledge of its own location.
@@ -621,6 +635,8 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
     // Unlike google Blockly, we don't want to show a context menu
     //this.showContextMenu_(e);
   } else if (!this.isMovable()) {
+    console.log("This block ain't movable! No more draggin");
+
     // Allow unmovable blocks to be selected and context menued, but not
     // dragged.  Let this event bubble up to document, so the blockSpace may be
     // dragged instead.
@@ -633,6 +649,7 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
     var xy = this.getRelativeToSurfaceXY();
     this.startDragX = xy.x;
     this.startDragY = xy.y;
+    console.log("Start dragging block ");
 
     // If we were given the start drag location, use that.
     if (e.startDragMouseX_ !== undefined && e.startDragMouseY_ !== undefined) {
@@ -640,17 +657,20 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
       this.startDragMouseY = e.startDragMouseY_;
       e.startDragMouseX_ = undefined;
       e.startDragMouseY_ = undefined;
+      console.log("starting drag location");
     } else {
       // Record the current mouse position.
+      console.log("recording mouse position");
       this.startDragMouseX = e.clientX;
       this.startDragMouseY = e.clientY;
     }
 
     Blockly.Block.dragMode_ = Blockly.Block.DRAG_MODE_INSIDE_STICKY_RADIUS;
     Blockly.Block.onMouseUpWrapper_ = Blockly.bindEvent_(document,
-        'mouseup', this, this.onMouseUp_);
+        'mouseup', this, this.onMouseUp_, true);
+    console.log("binding mouse move on this block! ");
     Blockly.Block.onMouseMoveWrapper_ = Blockly.bindEvent_(document,
-        'mousemove', this, this.onMouseMove_);
+        'mousemove', this, this.onMouseMove_, true);
     // Build a list of bubbles that need to be moved and where they started.
     this.draggedBubbles_ = [];
     var descendants = this.getDescendants();
@@ -675,6 +695,8 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
  * @private
  */
 Blockly.Block.prototype.onMouseUp_ = function(e) {
+  console.log("Mouse up! ");
+
   var thisBlockSpace = this.blockSpace;
   Blockly.BlockSpaceEditor.terminateDrag_();
   if (Blockly.selected && Blockly.highlightedConnection_) {
@@ -1044,6 +1066,8 @@ Blockly.Block.prototype.moveToFrontOfMainCanvas_ = function () {
  * @private
  */
 Blockly.Block.prototype.onMouseMove_ = function(e) {
+  console.log("Mouse movin! ");
+
   if (e.type == 'mousemove' && e.clientX <= 1 && e.clientY == 0 &&
       e.button == 0) {
     /* HACK:
@@ -1051,6 +1075,8 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
      on certain touch actions. Ignore events with these signatures.
      This may result in a one-pixel blind spot in other browsers,
      but this shouldn't be noticable. */
+    console.log("oh no, rogue mousemove event detected! ignore ignore");
+
     e.stopPropagation();
     return;
   }
@@ -1059,6 +1085,8 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
   var dy = e.clientY - this.startDragMouseY;
 
   if (Blockly.Block.dragMode_ == Blockly.Block.DRAG_MODE_INSIDE_STICKY_RADIUS) {
+    console.log("sticky draggin");
+
     // Still dragging within the sticky DRAG_RADIUS.
     var dr = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
     if (dr > Blockly.DRAG_RADIUS) {
@@ -1073,6 +1101,8 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
     }
   }
   if (Blockly.Block.dragMode_ == Blockly.Block.DRAG_MODE_FREELY_DRAGGING) {
+    console.log("free draggin");
+
     // Unrestricted dragging.
     var x = this.startDragX + dx;
     var y = this.startDragY + dy;
@@ -1118,10 +1148,13 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
     // Provide visual indication of whether the block will be
     // deleted if dropped here.
     if (this.areBlockAndDescendantsDeletable()) {
+      console.log("why, this is deletable");
+
       this.blockSpace.isDeleteArea(e, this.startDragMouseX);
     }
   }
   // This event has been handled.  No need to bubble up to the document.
+  console.log("hey stuff behind me I'm in the middle of draggin ");
   e.stopPropagation();
 };
 

@@ -39,6 +39,9 @@ goog.require('goog.style');
  * an additional one, relying on the main blockspace editor's one instead.
  */
 Blockly.BlockSpaceEditor = function(container, opt_getMetrics, opt_setMetrics, opt_hideTrashRect) {
+  Blockly.bindEvent_(document, 'mousemove', null, function() {
+      console.log("mouse move on document")
+    });
   if (opt_getMetrics) {
     this.getBlockSpaceMetrics_ = opt_getMetrics;
   }

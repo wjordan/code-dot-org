@@ -470,6 +470,7 @@ Blockly.Flyout.prototype.show = function(xmlList) {
 
     var root = block.getSvgRoot();
     if (this.autoClose) {
+      console.log("Autoclosing flyout");
       this.listeners_.push(Blockly.bindEvent_(root, 'mousedown', null,
           this.createBlockFunc_(block)));
     } else {
@@ -581,8 +582,11 @@ Blockly.Flyout.prototype.blockMouseDown_ = function(block) {
   var flyout = this;
   return function(e) {
     if (!flyout.enabled_) {
+      console.log("flyout blockmousedown");
+
       return;
     }
+    console.log("flyout blockmousedown terminating");
     Blockly.BlockSpaceEditor.terminateDrag_();
     flyout.blockSpace_.blockSpaceEditor.hideChaff();
     if (Blockly.isRightButton(e)) {
@@ -598,6 +602,7 @@ Blockly.Flyout.prototype.blockMouseDown_ = function(block) {
       Blockly.Flyout.startDragMouseY_ = e.clientY;
       Blockly.Flyout.startBlock_ = block;
       Blockly.Flyout.startFlyout_ = flyout;
+      console.log("binding flyout block mouse up and move");
       Blockly.Flyout.onMouseUpWrapper_ = Blockly.bindEvent_(document,
           'mouseup', this, Blockly.BlockSpaceEditor.terminateDrag_);
       Blockly.Flyout.onMouseMoveWrapper_ = Blockly.bindEvent_(document,
@@ -616,6 +621,7 @@ Blockly.Flyout.prototype.blockMouseDown_ = function(block) {
  * @private
  */
 Blockly.Flyout.prototype.onMouseMove_ = function(e) {
+  console.log("flyout block onMouseMove");
   if (e.type == 'mousemove' && e.clientX <= 1 && e.clientY == 0 &&
       e.button == 0) {
     /* HACK:
@@ -623,6 +629,8 @@ Blockly.Flyout.prototype.onMouseMove_ = function(e) {
      on certain touch actions. Ignore events with these signatures.
      This may result in a one-pixel blind spot in other browsers,
      but this shouldn't be noticable. */
+    console.log("hack hack! stop prop");
+
     e.stopPropagation();
     return;
   }
@@ -664,7 +672,9 @@ Blockly.Flyout.prototype.createFunctionalVariable_ = function() {
 Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
   var flyout = this;
   return function(e) {
+    console.log("Flyout create block func");
     if (!flyout.enabled_) {
+      console.log("Flyout create block func (disabled)");
       return;
     }
     if (Blockly.isRightButton(e)) {
@@ -672,9 +682,11 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
       return;
     }
     if (originBlock.disabled) {
+      console.log("Disabled block");
       // Beyond capacity.
       return;
     }
+    console.log("Creating new block");
     // Create the new block by cloning the block in the flyout (via XML).
     var xml = Blockly.Xml.blockToDom(originBlock);
     var targetBlockSpace = flyout.targetBlockSpace_;
@@ -699,6 +711,7 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
       flyout.filterForCapacity_();
     }
     // Start a dragging operation on the new block.
+    console.log("Starting dragging op on new block");
     block.onMouseDown_(e);
   };
 };
@@ -723,6 +736,7 @@ Blockly.Flyout.prototype.filterForCapacity_ = function() {
  * @private
  */
 Blockly.Flyout.terminateDrag_ = function() {
+  console.log("flyout terminatedrag");
   if (Blockly.Flyout.onMouseUpWrapper_) {
     Blockly.unbindEvent_(Blockly.Flyout.onMouseUpWrapper_);
     Blockly.Flyout.onMouseUpWrapper_ = null;

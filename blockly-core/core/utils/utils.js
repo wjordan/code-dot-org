@@ -389,8 +389,8 @@ Blockly.convertCoordinates = function(x, y, svg, toSvg) {
  */
 Blockly.mouseToSvg = function(e, opt_svgParent) {
   return Blockly.mouseCoordinatesToSvg(
-    e.clientX, 
-    e.clientY, 
+    e.clientX,
+    e.clientY,
     opt_svgParent || Blockly.topMostSVGParent(e.target));
 };
 

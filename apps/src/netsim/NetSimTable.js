@@ -25,16 +25,17 @@ var clientApi = require('@cdo/shared/clientApi');
  * updates from the server.
  * @type {number}
  */
-var DEFAULT_POLLING_DELAY_MS = 5000;
+var DEFAULT_POLLING_DELAY_MS = 30000;
 
 /**
  * Wraps the app storage table API in an object with local
  * cacheing and callbacks, which provides a notification API to the rest
  * of the NetSim code.
+ * @param {!Pusher.channel} pusherChannel
  * @param {!string} tableName - The name of the remote storage table to wrap.
  * @constructor
  */
-var NetSimTable = module.exports = function (tableName) {
+var NetSimTable = module.exports = function (pusherChannel, tableName) {
   /**
    * Base URL we hit to make our API calls
    * @type {string}
@@ -42,6 +43,13 @@ var NetSimTable = module.exports = function (tableName) {
    */
   this.remoteUrl_ = '/v3/shared-tables/' + netsimGlobals.getChannelPublicKey() +
       '/' + tableName;
+
+  /**
+   * @type {Pusher.channel}
+   */
+  this.channel = pusherChannel;
+  // Events named with just tableName include full table contents
+  this.channel.bind(tableName, NetSimTable.prototype.fullCacheUpdate_.bind(this));
 
   /**
    * API object for making remote calls
@@ -255,7 +263,7 @@ NetSimTable.prototype.arrayFromCache_ = function () {
  * @param {number} intervalMs - milliseconds of delay between updates.
  */
 NetSimTable.prototype.setPollingInterval = function (intervalMs) {
-  this.pollingInterval_ = intervalMs;
+  //this.pollingInterval_ = intervalMs;
 };
 
 /** Polls server for updates, if it's been long enough. */

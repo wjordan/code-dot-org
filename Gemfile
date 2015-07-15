@@ -104,6 +104,8 @@ gem 'redcarpet', '~> 3.2.3'
 
 gem 'geocoder'
 
+gem 'pusher', '~> 0.14.5' # PubSub for NetSim
+
 gem 'rmagick'
 
 gem 'acts_as_list'

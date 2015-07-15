@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'cdo/db'
 require 'cdo/rack/request'
 require 'csv'
+require 'pusher'
 
 class TablesApi < Sinatra::Base
 
@@ -13,6 +14,11 @@ class TablesApi < Sinatra::Base
     ].each do |file|
       load(CDO.dir('shared', 'middleware', 'helpers', file))
     end
+
+    Pusher.app_id = 'app_id'
+    Pusher.key = 'application_key'
+    Pusher.secret = 'application_secret'
+
   end
 
   TableType = CDO.use_dynamo_tables ? DynamoTable : Table
@@ -46,7 +52,9 @@ class TablesApi < Sinatra::Base
   #
   delete %r{/v3/(shared|user)-tables/([^/]+)/([^/]+)/(\d+)$} do |endpoint, channel_id, table_name, id|
     dont_cache
-    TableType.new(channel_id, storage_id(endpoint), table_name).delete(id.to_i)
+    table = TableType.new(channel_id, storage_id(endpoint), table_name)
+    table.delete(id.to_i)
+    Pusher.trigger(table_name[0..-3], table_name, table.to_a)
     no_content
   end
 
@@ -68,7 +76,9 @@ class TablesApi < Sinatra::Base
     unsupported_media_type unless request.content_type.to_s.split(';').first == 'application/json'
     unsupported_media_type unless request.content_charset.to_s.downcase == 'utf-8'
 
-    value = TableType.new(channel_id, storage_id(endpoint), table_name).insert(JSON.parse(request.body.read), request.ip)
+    table = TableType.new(channel_id, storage_id(endpoint), table_name)
+    value = table.insert(JSON.parse(request.body.read), request.ip)
+    Pusher.trigger(table_name[0..-3], table_name, table.to_a)
 
     dont_cache
     content_type :json
@@ -85,7 +95,9 @@ class TablesApi < Sinatra::Base
     unsupported_media_type unless request.content_type.to_s.split(';').first == 'application/json'
     unsupported_media_type unless request.content_charset.to_s.downcase == 'utf-8'
 
-    value = TableType.new(channel_id, storage_id(endpoint), table_name).update(id.to_i, JSON.parse(request.body.read), request.ip)
+    table = TableType.new(channel_id, storage_id(endpoint), table_name)
+    value = table.update(id.to_i, JSON.parse(request.body.read), request.ip)
+    Pusher.trigger(table_name[0..-3], table_name, table.to_a)
 
     dont_cache
     content_type :json

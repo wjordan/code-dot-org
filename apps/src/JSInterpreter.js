@@ -36,6 +36,7 @@ var JSInterpreter = module.exports = function (options) {
     // callback functions:
     options.code += '\nwhile (true) { var obj = getCallback(); ' +
       'if (obj) { var ret = obj.fn.apply(null, obj.arguments ? obj.arguments : null);' +
+                 '/* console.log(obj.fn); console.log(obj.arguments); */' +
                  'setCallbackRetVal(ret); }}';
   }
 
@@ -124,6 +125,8 @@ JSInterpreter.prototype.nativeSetCallbackRetVal = function (retVal) {
  * The function must be an interpreter function object (not native).
  */
 JSInterpreter.prototype.queueEvent = function (interpreterFunc, nativeArgs) {
+  //interpreterFunc.bind(undefined, nativeArgs) 
+  //_.bind(interpreterFunc, undefined, nativeArgs);
   this.eventQueue.push({
     'fn': interpreterFunc,
     'arguments': nativeArgs

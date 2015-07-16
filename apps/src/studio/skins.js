@@ -62,8 +62,12 @@ function loadInfinity(skin, assetUrl) {
   skin.explosion = skin.assetUrl('vanish.png');
   skin.explosionFrames = 17;
 
-  skin.projectileSpriteWidth = 70;
-  skin.projectileSpriteHeight = 70;
+  // let's keep these even to avoid rounding issues
+  skin.projectileSpriteWidth = 24;
+  skin.projectileSpriteHeight = 24;
+
+  skin.itemCollideWidth = 10;
+  skin.itemCollideHeight = 10;
 
   skin.avatarList = ['anna', 'elsa', 'hiro', 'baymax', 'rapunzel'];
   skin.avatarList.forEach(function (name) {

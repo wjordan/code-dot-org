@@ -17,7 +17,10 @@ var Item = function (options) {
 
   this.height = options.height || 50;
   this.width = options.width || 50;
+  this.projectileSpriteHeight = options.collideHeight || null;
+  this.projectileSpriteWidth = options.collideWidth || null;
   this.speed = options.speed || constants.DEFAULT_SPRITE_SPEED / 2;
+  //this.speed = 5;
 
   this.currentFrame_ = 0;
   var self = this;

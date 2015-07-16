@@ -488,17 +488,27 @@ var performQueuedMoves = function (i) {
     sprite.x = nextX;
     sprite.y = nextY;
   } else {
+    var topBoundary = 0 - (sprite.height - skin.itemCollideHeight)/2;
+    var rightBoundary = Studio.MAZE_WIDTH - (sprite.width - skin.itemCollideWidth)/2;
+    var bottomBoundary = Studio.MAZE_HEIGHT - (sprite.height - skin.itemCollideHeight)/2;
+    var leftBoundary = 0 - (sprite.width - skin.itemCollideWidth)/2;
+
     // Clamp nextX to boundaries as newX:
-    var newX = Math.min(Studio.MAZE_WIDTH - sprite.width,
-                        Math.max(0, nextX));
+    var newX = Math.min(rightBoundary,
+                        Math.max(leftBoundary, nextX));
     if (nextX != newX) {
+      console.log("performQueuedMoves canceling", nextX, "clamped was", newX);
       cancelQueuedMovements(i, false);
+    }
+    else
+    {
+      //console.log("performedQueuedMoves doing", nextX);
     }
     sprite.x = newX;
 
     // Clamp nextY to boundaries as newY:
-    var newY = Math.min(Studio.MAZE_HEIGHT - sprite.height,
-                        Math.max(0, nextY));
+    var newY = Math.min(bottomBoundary,
+                        Math.max(topBoundary, nextY));
     if (nextY != newY) {
       cancelQueuedMovements(i, true);
     }
@@ -580,7 +590,7 @@ var setSvgText = function(opts) {
  * @param {boolean} allowQueueExension When true, we allow additional cmds to
  *  be appended to the queue
  */
-function callHandler (name, allowQueueExtension) {
+function callHandler (name, allowQueueExtension, extraArgs) {
   Studio.eventHandlers.forEach(function (handler) {
     if (studioApp.isUsingBlockly()) {
       // Note: we skip executing the code if we have not completed executing
@@ -598,7 +608,7 @@ function callHandler (name, allowQueueExtension) {
     } else {
       // TODO (cpirich): support events with parameters
       if (handler.name === name) {
-        Studio.JSInterpreter.queueEvent(handler.func);
+        Studio.JSInterpreter.queueEvent(handler.func, extraArgs);
       }
     }
   });
@@ -645,6 +655,16 @@ Studio.callApiCode = function (name, func) {
 
 Studio.onTick = function() {
   Studio.tickCount++;
+
+  $(".avatarCollision").remove();
+  $(".wallCollision").remove();
+  $(".itemCollision").remove();
+  $(".spriteCollision").remove();
+  $(".chaseFreeCollision").remove();
+  $(".spriteForDistance").remove();
+  $(".itemForDistance").remove();
+  $(".spriteForChaseFree").remove();
+  $(".itemForChaseFree").remove();
 
   var animationOnlyFrame = false;
 
@@ -767,6 +787,8 @@ Studio.onTick = function() {
     Studio.displaySprite(i, isWalking);
   }
 
+  //Studio.drawAvatarCollisionSquare();
+
   performItemOrProjectileMoves(Studio.projectiles);
   performItemOrProjectileMoves(Studio.items);
 
@@ -782,13 +804,23 @@ function spriteCollisionDistance  (i1, i2, yAxis) {
 }
 
 function spriteCollidableCollisionDistance (iS, collidable, yAxis) {
-  var dim1 = yAxis ? Studio.sprite[iS].height : Studio.sprite[iS].width;
-  var dim2 = yAxis ? collidable.height : collidable.width;
+  var spriteWidth = Studio.sprite[iS].projectileSpriteWidth || Studio.sprite[iS].width;
+  var spriteHeight = Studio.sprite[iS].projectileSpriteHeight || Studio.sprite[iS].height;
+
+  var collidableHeight = collidable.projectileSpriteHeight || collidable.height;
+  var collidableWidth = collidable.projectileSpriteWidth || collidable.width;
+
+  var dim1 = yAxis ? spriteHeight : spriteWidth;
+  var dim2 = yAxis ? collidableHeight : collidableWidth;
   return constants.SPRITE_COLLIDE_DISTANCE_SCALING * (dim1 + dim2) / 2;
 }
 
 function edgeCollidableCollisionDistance (collidable, edgeName, yAxis) {
-  var dim1 = yAxis ? collidable.height : collidable.width;
+
+  var collidableHeight = collidable.projectileSpriteHeight || collidable.height;
+  var collidableWidth = collidable.projectileSpriteWidth || collidable.width;
+
+  var dim1 = yAxis ? collidableHeight : collidableWidth;
   var dim2;
   if (edgeName === 'left' || edgeName === 'right') {
     dim2 = yAxis ? Studio.MAZE_HEIGHT : 0;
@@ -810,6 +842,10 @@ function handleActorCollisionsWithCollidableList (
   for (var i = list.length - 1; i >= 0; i--) {
     var collidable = list[i];
     var next = collidable.getNextPosition();
+    
+    Studio.drawCollisionSquare("itemCollision", next.x, next.y, collidable.projectileSpriteWidth || collidable.width, collidable.projectileSpriteHeight || collidable.height);
+    Studio.drawCollisionSquare("spriteCollision", xCenter, yCenter, Studio.sprite[spriteIndex].projectileSpriteWidth || Studio.sprite[spriteIndex].width,  Studio.sprite[spriteIndex].projectileSpriteHeight || Studio.sprite[spriteIndex].height);
+
     if (collisionTest(
           xCenter,
           next.x,
@@ -984,27 +1020,35 @@ function createItemEdgeCollisionHandler (item) {
   return function (edgeClass) {
     if (level.blockMovingIntoWalls) {
       // TODO: Find a real direction!!
-      item.bounce();
+      //item.bounce();
+      //item.chase();
     }
     Studio.currentEventParams = { eventObject: item };
     // Allow cmdQueue extension (pass true) since this handler
     // may be called for multiple items before executing the queue
     // below
+    Studio.lastCollisionItem = item;
     handleItemCollision(item.className, edgeClass, true);
     Studio.currentEventParams = null;
   };
 }
+
 
 function checkForItemCollisions () {
   for (var i = 0; i < Studio.items.length; i++) {
     var item = Studio.items[i];
     var next = item.getNextPosition();
 
+    var itemBounced = false;
+
     if (level.wallMapCollisions) {
       if (Studio.willCollidableTouchWall(item, next.x, next.y)) {
         if (level.blockMovingIntoWalls) {
           // TODO: Find a real direction!!
-          item.bounce();
+          //item.bounce();
+          //item.roam();
+          //item.chase();
+          //itemBounced = true;
         }
         Studio.currentEventParams = { eventObject: item };
         // Allow cmdQueue extension (pass true) since this handler
@@ -1015,6 +1059,16 @@ function checkForItemCollisions () {
       } else {
         item.endCollision('wall');
       }
+    }
+
+    // let's just update each item with fresh logic
+    Studio.lastCollisionItem = item;
+    executeItemUpdate(item, i);
+    executeItemUpdateFar(item, i);
+    executeItemUpdateNear(item, i);
+
+    if (!itemBounced) {
+      //item.chase();
     }
 
     if (level.edgeCollisions) {
@@ -1041,7 +1095,7 @@ function checkForItemCollisions () {
 
 Studio.willSpriteTouchWall = function (sprite, xPos, yPos) {
   var xCenter = xPos + sprite.width / 2;
-  var yCenter = yPos + sprite.height / 2;
+  var yCenter = yPos + sprite.height / 2 + 24;
   return Studio.willCollidableTouchWall(sprite, xCenter, yCenter);
 };
 
@@ -1062,12 +1116,18 @@ Studio.willCollidableTouchWall = function (collidable, xCenter, yCenter) {
          row < Math.min(Studio.ROWS, iYGrid + rowsOffset);
          row++) {
       if (Studio.map[row][col] & SquareType.WALL) {
+        var collidableHeight = collidable.projectileSpriteHeight || collidable.height;
+        var collidableWidth = collidable.projectileSpriteWidth || collidable.width;
+
+        //Studio.drawCollisionSquare("avatarCollision", xCenter, yCenter, collidableWidth, collidableHeight);
+        //Studio.drawCollisionSquare("wallCollision", (col + 0.5) * Studio.SQUARE_SIZE, (row + 0.5) * Studio.SQUARE_SIZE, Studio.SQUARE_SIZE, Studio.SQUARE_SIZE);
+
         if (overlappingTest(xCenter,
                             (col + 0.5) * Studio.SQUARE_SIZE,
-                            Studio.SQUARE_SIZE / 2 + collidable.width / 2,
-                            yCenter,
+                            Studio.SQUARE_SIZE / 2 + collidableWidth / 2,
+                            yCenter + 0, // 25,
                             (row + 0.5) * Studio.SQUARE_SIZE,
-                            Studio.SQUARE_SIZE / 2 + collidable.height / 2)) {
+                            Studio.SQUARE_SIZE / 2 + collidableHeight / 2)) {
           return true;
         }
       }
@@ -1075,6 +1135,27 @@ Studio.willCollidableTouchWall = function (collidable, xCenter, yCenter) {
   }
   return false;
 };
+
+/**
+ * Test to see if a collidable will be going off the edge of the play area
+ */
+
+Studio.willCollidableLeaveArea = function(collidable, xCenter, yCenter) {
+  var topBoundary = 0 - (skin.itemCollideHeight)/2;
+  var rightBoundary = Studio.MAZE_WIDTH - (skin.itemCollideWidth)/2;
+  var bottomBoundary = Studio.MAZE_HEIGHT - (skin.itemCollideHeight)/2;
+  var leftBoundary = 0 - (skin.itemCollideWidth)/2;
+
+  if (xCenter < leftBoundary ||
+      xCenter > rightBoundary ||
+      yCenter < topBoundary ||
+      yCenter > bottomBoundary) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 Studio.onSvgDrag = function(e) {
   if (Studio.tickCount > 0) {
@@ -2092,6 +2173,36 @@ function cellId(prefix, row, col) {
   return prefix + '_' + row + '_' + col;
 }
 
+
+Studio.drawAvatarCollisionSquare = function() {
+
+  var sprite = Studio.sprite[0];
+  var x = sprite.x + sprite.width/2;
+  var y = sprite.y + sprite.height/2;
+
+  Studio.drawCollisionSquare(x, y, sprite.projectileSpriteWidth, sprite.projectileSpriteHeight);
+};
+
+
+Studio.drawCollisionSquare = function(className, x, y, width, height) {
+  return;
+
+  var svg = document.getElementById('svgStudio');
+  var group = document.createElementNS(SVG_NS, 'g');
+  var background = document.createElementNS(SVG_NS, 'rect');
+  background.setAttribute('class', className);
+  background.setAttribute('width', width);
+  background.setAttribute('height', height);
+  background.setAttribute('x', x - width/2);
+  background.setAttribute('y', y - height/2);
+  background.setAttribute('fill', 'rgba(255, 255, 255, 0.5)');
+  background.setAttribute('stroke', '#000000');
+  background.setAttribute('stroke-width', 1);
+  group.appendChild(background);
+  svg.appendChild(group);
+};
+
+
 Studio.drawWallTile = function (svg, row, col) {
 
   // Placeholder implementation: just drawing boxes with X's in them for now:
@@ -2435,6 +2546,10 @@ Studio.callCmd = function (cmd) {
       studioApp.highlight(cmd.id);
       Studio.moveSingle(cmd.opts);
       break;
+    case 'setRandomDirection':
+      studioApp.highlight(cmd.id);
+      Studio.setRandomDirection();
+      break;
     case 'moveEast':
       studioApp.highlight(cmd.id);
       Studio.moveSingle({
@@ -2506,6 +2621,10 @@ Studio.callCmd = function (cmd) {
       studioApp.highlight(cmd.id);
       Studio.addItemsToScene(cmd.opts);
       break;
+    case 'setItemAction':
+      studioApp.highlight(cmd.id);
+      Studio.setItemAction(cmd.opts);
+      break;
     case 'onEvent':
       studioApp.highlight(cmd.id);
       Studio.onEvent(cmd.opts);
@@ -2561,6 +2680,8 @@ Studio.addItemsToScene = function (opts) {
       loop: true,
       x: pos.x,
       y: pos.y,
+      collideWidth: skin.itemCollideWidth || null,
+      collideHeight: skin.itemCollideHeight || null
     };
 
     var item = new Item(itemOptions);
@@ -2583,6 +2704,36 @@ Studio.addItemsToScene = function (opts) {
 
     item.createElement(document.getElementById('svgStudio'));
     Studio.items.push(item);
+  }
+};
+
+Studio.setItemAction = function (opts) {
+  var item = Studio.items[opts.itemIndex];
+  //var item = Studio.lastCollisionItem;
+
+  if (opts.type == "chase_old") {
+    // Chase avatar
+    item.chaseSmart();
+  } else if (opts.type == "flee_old") {
+    item.fleeSmart();
+  } else if (opts.type == "bounce") {
+    item.smartBounce();
+  } else if (opts.type == "roam_old") {
+    item.roam();
+  } else if (opts.type == "roam") {
+    if (item) {
+      item.roamFree();
+    }
+  } else if (opts.type == "chase") {
+    if (item) {
+      item.chaseFree();
+    }
+  } else if (opts.type == "flee") {
+    if (item) {
+      item.fleeFree();
+    }
+  } else {
+    item.dir = opts.type;
   }
 };
 
@@ -2670,6 +2821,11 @@ Studio.setSpriteSize = function (opts) {
       value: curSpriteValue
     });
   }
+};
+
+Studio.setSpriteDirection = function (opts) {
+  var speed = Math.min(Math.max(opts.value, 2), 12);
+  Studio.sprite[opts.spriteIndex].speed = speed;
 };
 
 Studio.changeScore = function (opts) {
@@ -3192,6 +3348,8 @@ function handleCollision(src, target, allowQueueExtension) {
 function handleItemCollision(src, target, allowQueueExtension) {
   var prefix = 'whenItemCollided-' + src + '-';
 
+  Studio.lastItemCollisionTarget = target;
+
   callHandler(prefix + target, allowQueueExtension);
 
   if (isEdgeClass(target)) {
@@ -3210,6 +3368,45 @@ function executeItemCollision(src, target) {
   if (isEdgeClass(target)) {
     Studio.executeQueue(prefix + 'any_edge');
   }
+}
+
+function executeItemUpdate(item, itemIndex) {
+  var prefix = 'whenItemUpdated-' + item.className;
+  callHandler(prefix, undefined, [itemIndex]);
+}
+
+function executeItemUpdateNear(item, itemIndex) {
+  if (Studio.distanceFromSpriteToItem(item) < 150) {
+    console.log("near");
+    var prefix = 'whenItemUpdatedNear-' + item.className;
+    callHandler(prefix, undefined, [itemIndex]);
+  }
+}
+
+function executeItemUpdateFar(item, itemIndex) {
+  if (Studio.distanceFromSpriteToItem(item) >= 150) {
+    console.log("far");
+    var prefix = 'whenItemUpdatedFar-' + item.className;
+    callHandler(prefix, undefined, [itemIndex]);
+  }
+}
+
+Studio.distanceFromSpriteToItem = function (item) {
+  var spriteX = Studio.sprite[0].x + Studio.sprite[0].width/2;
+  var spriteY = Studio.sprite[0].y + Studio.sprite[0].height/2;
+
+  var itemX = item.x;
+  var itemY = item.y;
+
+  var distX = spriteX - itemX;
+  var distY = spriteY - itemY;
+
+  var distance = Math.sqrt(distX * distX + distY * distY);
+
+  Studio.drawCollisionSquare("spriteForDistance", spriteX, spriteY, 3, 3);
+  Studio.drawCollisionSquare("itemForDistance", itemX, itemY, 3, 3);
+
+  return distance;
 }
 
 /**
@@ -3243,6 +3440,7 @@ function executeCollision(src, target) {
  */
 Studio.collideItemWith = function (item, target, allowQueueExtension) {
   if (item.startCollision(target)) {
+    Studio.lastCollisionItem = item;
     handleItemCollision(item.className, target, allowQueueExtension);
   }
 };
@@ -3308,8 +3506,9 @@ Studio.moveSingle = function (opts) {
         break;
       }
       sprite.y -= distance;
-      if (sprite.y < 0 && !level.allowSpritesOutsidePlayspace) {
-        sprite.y = 0;
+      var topBoundary = 0 - (sprite.height - skin.projectileSpriteHeight)/2;
+      if (sprite.y < topBoundary && !level.allowSpritesOutsidePlayspace) {
+        sprite.y = topBoundary;
       }
       break;
     case Direction.EAST:
@@ -3317,8 +3516,9 @@ Studio.moveSingle = function (opts) {
           Studio.willSpriteTouchWall(sprite, sprite.x + distance, sprite.y)) {
         break;
       }
+      console.log("moveSingle: sprite.x from", sprite.x, "to", sprite.x + distance);
       sprite.x += distance;
-      var rightBoundary = Studio.MAZE_WIDTH - sprite.width;
+      var rightBoundary = Studio.MAZE_WIDTH - (sprite.width - skin.projectileSpriteWidth)/2;
       if (sprite.x > rightBoundary && !level.allowSpritesOutsidePlayspace) {
         sprite.x = rightBoundary;
       }
@@ -3329,7 +3529,7 @@ Studio.moveSingle = function (opts) {
         break;
       }
       sprite.y += distance;
-      var bottomBoundary = Studio.MAZE_HEIGHT - sprite.height;
+      var bottomBoundary = Studio.MAZE_HEIGHT - (sprite.height - skin.projectileSpriteHeight)/2;
       if (sprite.y > bottomBoundary && !level.allowSpritesOutsidePlayspace) {
         sprite.y = bottomBoundary;
       }
@@ -3339,9 +3539,11 @@ Studio.moveSingle = function (opts) {
           Studio.willSpriteTouchWall(sprite, sprite.x - distance, sprite.y)) {
         break;
       }
+      console.log("moveSingle: sprite.x from", sprite.x, "to", sprite.x - distance);
       sprite.x -= distance;
-      if (sprite.x < 0 && !level.allowSpritesOutsidePlayspace) {
-        sprite.x = 0;
+      var leftBoundary = 0 - (sprite.width - skin.projectileSpriteWidth)/2;
+      if (sprite.x < leftBoundary && !level.allowSpritesOutsidePlayspace) {
+        sprite.x = leftBoundary;
       }
       break;
   }

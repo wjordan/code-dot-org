@@ -43,7 +43,7 @@ function loadInfinity(skin, assetUrl) {
 
   // TODO: proper item class names
   skin.ItemClassNames = [
-    'item_hiro',
+    'item_walk_baymax',
     'item_anna',
     'item_elsa',
     'item_baymax',
@@ -54,6 +54,7 @@ function loadInfinity(skin, assetUrl) {
   ];
 
   skin.specialItemFrames = {
+    'item_walk_baymax': 8,
     'item_cherry': 13,
     'item_ice': 12,
     'item_duck': 12
@@ -104,6 +105,7 @@ function loadInfinity(skin, assetUrl) {
   skin.projectile_duck = skin.assetUrl('projectile_duck.png');
 
   // TODO: Create actual item choices
+  skin.item_walk_baymax = skin.assetUrl('walk_baymax.png');
   skin.item_hiro = skin.assetUrl('projectile_hiro.png');
   skin.item_anna = skin.assetUrl('projectile_anna.png');
   skin.item_elsa = skin.assetUrl('projectile_elsa.png');

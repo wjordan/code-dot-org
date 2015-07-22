@@ -9,8 +9,11 @@
 
 var studioApp = require('../StudioApp').singleton;
 var Direction = require('./constants').Direction;
+var constants = require('./constants');
 var utils = require('../utils');
 var _ = utils.getLodash();
+
+var SquareType = constants.SquareType;
 
 //
 // Collidable constructor
@@ -222,6 +225,38 @@ Collidable.prototype.chaseFree = function() {
 
   this.framesSinceLook = 0;
 
+  chaseFreeImmediate(true);
+
+}
+
+
+Collidable.prototype.checkLocation = function() {
+
+  var next = this.getNextPosition();
+
+  // is our current position on a tile center location?  if so, drop a marker,
+  // and this will probably be a good time to update for the grid-aligned baddies.
+  if (next.x % Studio.SQUARE_SIZE < 20 && 
+      next.y % Studio.SQUARE_SIZE < 20) {
+    Studio.drawCollisionSquare("itemOnGridPoint", next.x, next.y, 4, 4);
+  }
+
+}
+
+Collidable.prototype.chaseFreeImmediate = function(skipWallCheck) {
+
+  // If we're going to hit a wall, then just roam away from it instead.
+
+  if (! skipWallCheck) {
+    var next = this.getNextPosition();
+    if (Studio.willCollidableTouchWall(this, next.x, next.y)) {
+      Studio.drawCollisionSquare("chaseFreeCollision", next.x, next.y, 10, 10);
+      this.roamImmediate();
+      this.framesSinceLook = 0;
+      return;
+    }
+  }
+
 
 
   // Chase the good guy.
@@ -419,6 +454,119 @@ Collidable.prototype.roamFree = function() {
   }
 
   this.roamImmediate();
+}
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive)
+ * Using Math.round() will give you a non-uniform distribution!
+ */
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+Collidable.prototype.roamGrid = function() {
+
+  // do we have an active location in grid coords?  if not, determine it
+  if (this.gridX === undefined) {
+    this.gridX = Math.floor(this.x / Studio.SQUARE_SIZE);
+    this.gridY = Math.floor(this.y / Studio.SQUARE_SIZE);
+    console.log("from ", this.x, this.y, "to grid location", this.gridX, this.gridY);
+  }
+
+  var reachedDest = false;
+
+  // draw our guy's current location
+  Studio.drawCollisionSquare("itemCenter", this.x, this.y, 3, 3);
+
+  // draw dest
+  Studio.drawCollisionSquare(
+    "roamGridDest", 
+    this.destGridX * Studio.SQUARE_SIZE + Studio.HALF_SQUARE, 
+    this.destGridY * Studio.SQUARE_SIZE + Studio.HALF_SQUARE, 
+    Studio.SQUARE_SIZE, 
+    Studio.SQUARE_SIZE);
+
+  if (this.destGridX !== undefined &&
+      (Math.abs(this.x - (this.destGridX * Studio.SQUARE_SIZE + Studio.HALF_SQUARE)) < 3 &&
+       Math.abs(this.y - (this.destGridY * Studio.SQUARE_SIZE + Studio.HALF_SQUARE)) < 3)) {
+    this.gridX = this.destGridX;
+    this.gridY = this.destGridY;
+    console.log("we have hit a new grid location", this.gridX, this.gridY);
+    reachedDest = true;
+  }
+
+  // are we missing a destination location in grid coords?
+  // or have we already reached our prior destination location in grid coords?
+  //   if not, determine it
+  if (this.destGridX === undefined || reachedDest) {
+
+    var attempts = 0;
+
+    do {
+      /*
+      if (getRandomInt(0,1) == 0) {
+        this.destGridX = this.gridX + getRandomInt(-1,1);
+        this.destGridY = this.gridY;
+      } else {
+        this.destGridY = this.gridY + getRandomInt(-1,1);
+        this.destGridX = this.gridX;
+      }*/
+
+      // first few times?
+      if (attempts < 4) {
+        // attempt a chase!
+        var sprite = Studio.sprite[0];
+        if (sprite.x > this.x + 40) {
+          this.destGridX = this.gridX + 1;
+        } else if (sprite.x < this.x - 40) {
+          this.destGridX = this.gridX - 1;
+        }
+
+        if (sprite.y > this.y + 40) {
+          this.destGridY = this.gridY + 1;
+        } else if (sprite.y < this.y - 40) {
+          this.destGridY = this.gridY - 1;
+        }
+
+      }
+      else {
+
+
+      
+        // random roam
+        this.destGridX = this.gridX + getRandomInt(-1,1);
+        this.destGridY = this.gridY + getRandomInt(-1,1);
+      
+      }
+
+      var atEdge = this.destGridX < 0 || this.destGridX >= Studio.COLS ||
+                   this.destGridY < 0 || this.destGridY >= Studio.ROWS;
+
+      var hasWall = !atEdge && Studio.map[this.destGridY][this.destGridX] & SquareType.WALL;
+
+    } while ((hasWall || atEdge) && (this.destGridX != this.gridX || this.destGridY != this.gridY) && attempts++ < 50);
+  }
+
+  // update towards the next location
+  if (this.destGridX > this.gridX && this.destGridY > this.gridY) {
+    this.dir = Direction.SOUTHEAST;
+  } else if (this.destGridX > this.gridX && this.destGridY < this.gridY) {
+    this.dir = Direction.NORTHEAST;
+  } else if (this.destGridX < this.gridX && this.destGridY > this.gridY) {
+    this.dir = Direction.SOUTHWEST;
+  } else if (this.destGridX < this.gridX && this.destGridY < this.gridY) {
+    this.dir = Direction.NORTHWEST;
+  } else if (this.destGridX > this.gridX) {
+    this.dir = Direction.EAST;
+  } else if (this.destGridX < this.gridX) {
+    this.dir = Direction.WEST;
+  } else if (this.destGridY > this.gridY) {
+    this.dir = Direction.SOUTH;
+  } else if (this.destGridY < this.gridY) {
+    this.dir = Direction.NORTH;
+  } else {
+    this.dir = Direction.NONE;
+  }
 }
 
 

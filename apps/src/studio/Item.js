@@ -20,13 +20,14 @@ var Item = function (options) {
   this.projectileSpriteHeight = options.collideHeight || null;
   this.projectileSpriteWidth = options.collideWidth || null;
   this.speed = options.speed || constants.DEFAULT_SPRITE_SPEED / 2;
-  //this.speed = 5;
+  this.rows = options.rows || 1;
+  this.speed = 2;
 
   this.currentFrame_ = 0;
   var self = this;
   this.animator_ = window.setInterval(function () {
     if (self.loop || self.currentFrame_ + 1 < self.frames) {
-      self.currentFrame_ = (self.currentFrame_ + 1) % self.frames;
+      //self.currentFrame_ = (self.currentFrame_ + 1) % self.frames;
     }
   }, 50);
 };
@@ -61,7 +62,7 @@ Item.prototype.createElement = function (parentElement) {
   this.element = document.createElementNS(SVG_NS, 'image');
   this.element.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href',
     this.image);
-  this.element.setAttribute('height', this.height);
+  this.element.setAttribute('height', this.height * this.rows);
   this.element.setAttribute('width', this.width * this.frames);
   parentElement.appendChild(this.element);
 

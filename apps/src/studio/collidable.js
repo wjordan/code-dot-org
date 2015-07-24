@@ -502,42 +502,65 @@ Collidable.prototype.roamGrid = function() {
 
     var attempts = 0;
 
-    do {
-      /*
-      if (getRandomInt(0,1) == 0) {
-        this.destGridX = this.gridX + getRandomInt(-1,1);
-        this.destGridY = this.gridY;
+    do { 
+      if (this.sequenceStep === undefined) {
+        this.sequenceStep = 0;
+      }
+      this.sequenceStep ++;
+
+      // alternate chasing and roaming
+      if (Math.floor(this.sequenceStep / 100) % 2 == 55) {
+      
+        if (getRandomInt(0,1) == 0) {
+          this.destGridX = this.gridX + getRandomInt(-1,1);
+          this.destGridY = this.gridY;
+        } else {
+          this.destGridY = this.gridY + getRandomInt(-1,1);
+          this.destGridX = this.gridX;
+        }
       } else {
-        this.destGridY = this.gridY + getRandomInt(-1,1);
-        this.destGridX = this.gridX;
-      }*/
 
-      // first few times?
-      if (attempts < 4) {
-        // attempt a chase!
-        var sprite = Studio.sprite[0];
-        if (sprite.x > this.x + 40) {
-          this.destGridX = this.gridX + 1;
-        } else if (sprite.x < this.x - 40) {
-          this.destGridX = this.gridX - 1;
+        // first few times?
+
+        if (attempts < 0 && this.destGridX !== undefined) {
+          // can we just continue?
+        } else if (attempts < 8) {
+          // attempt a chase!
+          var sprite = Studio.sprite[0];
+          if (sprite.x > this.x + 5) {
+            this.destGridX = this.gridX + 1;
+          } else if (sprite.x < this.x - 5) {
+            this.destGridX = this.gridX - 1;
+          } else {
+            this.destGridX = this.gridX + getRandomInt(-1,1);
+          }
+
+          if (sprite.y > this.y + 5) {
+            this.destGridY = this.gridY + 1;
+          } else if (sprite.y < this.y - 5) {
+            this.destGridY = this.gridY - 1;
+          } else {
+            this.destGridY = this.gridY + getRandomInt(-1,1);
+          }
+
         }
+        else {
 
-        if (sprite.y > this.y + 40) {
-          this.destGridY = this.gridY + 1;
-        } else if (sprite.y < this.y - 40) {
-          this.destGridY = this.gridY - 1;
+
+        
+          // random roam
+          this.destGridX = this.gridX + getRandomInt(-1,1);
+          this.destGridY = this.gridY + getRandomInt(-1,1);
+        
         }
-
       }
-      else {
 
-
-      
-        // random roam
-        this.destGridX = this.gridX + getRandomInt(-1,1);
-        this.destGridY = this.gridY + getRandomInt(-1,1);
-      
-      }
+      Studio.drawCollisionSquare(
+        "roamGridPossibleDest", 
+        this.destGridX * Studio.SQUARE_SIZE + Studio.HALF_SQUARE, 
+        this.destGridY * Studio.SQUARE_SIZE + Studio.HALF_SQUARE, 
+        Studio.SQUARE_SIZE, 
+        Studio.SQUARE_SIZE);
 
       var atEdge = this.destGridX < 0 || this.destGridX >= Studio.COLS ||
                    this.destGridY < 0 || this.destGridY >= Studio.ROWS;

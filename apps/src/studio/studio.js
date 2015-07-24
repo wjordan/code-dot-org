@@ -667,6 +667,7 @@ Studio.onTick = function() {
   $(".itemForChaseFree").remove();
   $(".roamGridDest").remove();
   $(".itemCenter").remove();
+  $(".roamGridPossibleDest").remove();
 
   var animationOnlyFrame = false;
 
@@ -2178,7 +2179,7 @@ function cellId(prefix, row, col) {
 
 
 Studio.drawCollisionSquare = function(className, x, y, width, height) {
-  return;
+  //return;
 
   var svg = document.getElementById('svgStudio');
   var group = document.createElementNS(SVG_NS, 'g');

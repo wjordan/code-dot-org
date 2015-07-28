@@ -1,5 +1,5 @@
 class ProjectsController < ApplicationController
-  before_filter :authenticate_user!, except: [:show, :edit, :readonly, :redirect_legacy]
+  before_filter :authenticate_user!, except: [:load, :show, :edit, :readonly, :redirect_legacy]
   before_action :set_level, only: [:show, :edit, :readonly, :remix]
   include LevelsHelper
 

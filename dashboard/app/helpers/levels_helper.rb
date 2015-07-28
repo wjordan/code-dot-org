@@ -36,6 +36,15 @@ module LevelsHelper
     ))
     headers = result[1]
 
+    # The ChannelsApi may set a storage_id cookie that we need to copy to the response.
+    if headers['Set-Cookie']
+      begin
+        cookies headers['Set-Cookie'].split('\;').first.split('=')
+      rescue
+        # Unable to copy over storage_id.
+      end
+    end
+
     # Return the newly created channel ID.
     headers['Location'].split('/').last
   end

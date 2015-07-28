@@ -58,4 +58,9 @@ class ProjectsControllerTest < ActionController::TestCase
       apple_mobile_web_app: true
     )
   end
+
+  test 'legacy /p/:key links redirect to /projects/:key' do
+    get :redirect_legacy, key: :artist, controller: 'p'
+    assert_template 'projects/redirect_legacy'
+  end
 end

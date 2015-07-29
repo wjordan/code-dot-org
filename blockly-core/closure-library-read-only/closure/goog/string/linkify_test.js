@@ -15,12 +15,13 @@
 goog.provide('goog.string.linkifyTest');
 goog.setTestOnly('goog.string.linkifyTest');
 
+goog.require('goog.dom.TagName');
 goog.require('goog.string');
 goog.require('goog.string.linkify');
 goog.require('goog.testing.dom');
 goog.require('goog.testing.jsunit');
 
-var div = document.createElement('div');
+var div = document.createElement(goog.dom.TagName.DIV);
 
 function assertLinkify(comment, input, expected) {
   assertEquals(
@@ -162,6 +163,15 @@ function testUrlWithoutHttp() {
           '<\/a> without the http:// in front.');
 }
 
+function testUrlWithCapitalsWithoutHttp() {
+  assertLinkify(
+      'URL with capital letters without http protocol',
+      'It\'s faster to type Www.google.com without the http:// in front.',
+      goog.string.htmlEscape('It\'s faster to type ') +
+          '<a href="http://Www.google.com">Www.google.com' +
+          '<\/a> without the http:// in front.');
+}
+
 function testUrlHashBang() {
   assertLinkify(
       'URL with #!',
@@ -248,7 +258,7 @@ function testJsInjectionWithIgnorableNonTagChar() {
       'Angle brackets are normalized even when followed by an ignorable ' +
           'non-tag character.',
       '<\u0000img onerror=alert(1337) src=\n>',
-      '&lt;\u0000img onerror=alert(1337) src=\n&gt;');
+      '&lt;&#0;img onerror=alert(1337) src=\n&gt;');
 }
 
 function testJsInjectionWithTextarea() {
@@ -392,6 +402,11 @@ function testEndsWithPunctuation_closeParen() {
       'Link inside parentheses',
       '(For more info see www.googl.com)',
       '(For more info see <a href="http://www.googl.com">www.googl.com<\/a>)');
+  assertLinkify(
+      'Parentheses inside link',
+      'http://en.wikipedia.org/wiki/Titanic_(1997_film)',
+      '<a href="http://en.wikipedia.org/wiki/Titanic_(1997_film)">' +
+          'http://en.wikipedia.org/wiki/Titanic_(1997_film)<\/a>');
 }
 
 function testEndsWithPunctuation_openParen() {
@@ -438,4 +453,12 @@ function testUrlWithExclamation() {
       'URL with exclamation points',
       'This is awesome www.google.com!',
       'This is awesome <a href="http://www.google.com">www.google.com<\/a>!');
+}
+
+function testIpv6Url() {
+  assertLinkify(
+      'IPv6 URL',
+      'http://[::FFFF:129.144.52.38]:80/index.html',
+      '<a href="http://[::FFFF:129.144.52.38]:80/index.html">' +
+      'http://[::FFFF:129.144.52.38]:80/index.html<\/a>');
 }

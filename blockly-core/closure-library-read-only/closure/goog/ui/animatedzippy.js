@@ -22,6 +22,7 @@
 goog.provide('goog.ui.AnimatedZippy');
 
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.fx.Animation');
 goog.require('goog.fx.Transition');
@@ -49,7 +50,8 @@ goog.ui.AnimatedZippy = function(header, content, opt_expanded, opt_domHelper) {
   var domHelper = opt_domHelper || goog.dom.getDomHelper();
 
   // Create wrapper element and move content into it.
-  var elWrapper = domHelper.createDom('div', {'style': 'overflow:hidden'});
+  var elWrapper = domHelper.createDom(goog.dom.TagName.DIV,
+                                      {'style': 'overflow:hidden'});
   var elContent = domHelper.getElement(content);
   elContent.parentNode.replaceChild(elWrapper, elContent);
   elWrapper.appendChild(elContent);
@@ -80,6 +82,7 @@ goog.ui.AnimatedZippy = function(header, content, opt_expanded, opt_domHelper) {
   this.updateHeaderClassName(expanded);
 };
 goog.inherits(goog.ui.AnimatedZippy, goog.ui.Zippy);
+goog.tagUnsealableClass(goog.ui.AnimatedZippy);
 
 
 /**
@@ -185,7 +188,7 @@ goog.ui.AnimatedZippy.prototype.onAnimationCompleted_ = function(expanded) {
     this.getContentElement().style.marginTop = '0';
   }
 
-  goog.events.removeAll(this.anim_);
+  goog.events.removeAll(/** @type {!goog.fx.Animation} */ (this.anim_));
   this.setExpandedInternal(expanded);
   this.anim_ = null;
 

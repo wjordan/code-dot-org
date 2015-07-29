@@ -17,7 +17,8 @@ goog.setTestOnly('goog.fx.DragListGroupTest');
 
 goog.require('goog.array');
 goog.require('goog.dom');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.TagName');
+goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.events.BrowserFeature');
@@ -55,19 +56,19 @@ var initialListenerCount;
 
 /**
  * Type of events fired by the DragListGroup.
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  */
 var firedEventTypes;
 
 function setUp() {
   var sandbox = goog.dom.getElement('sandbox');
-  list = goog.dom.createDom('div', {'id': 'horiz_div'});
-  list.appendChild(
-      goog.dom.createDom('div', null, goog.dom.createTextNode('1')));
-  list.appendChild(
-      goog.dom.createDom('div', null, goog.dom.createTextNode('2')));
-  list.appendChild(
-      goog.dom.createDom('div', null, goog.dom.createTextNode('3')));
+  list = goog.dom.createDom(goog.dom.TagName.DIV, {'id': 'horiz_div'});
+  list.appendChild(goog.dom.createDom(goog.dom.TagName.DIV, null,
+                                      goog.dom.createTextNode('1')));
+  list.appendChild(goog.dom.createDom(goog.dom.TagName.DIV, null,
+                                      goog.dom.createTextNode('2')));
+  list.appendChild(goog.dom.createDom(goog.dom.TagName.DIV, null,
+                                      goog.dom.createTextNode('3')));
   sandbox.appendChild(list);
 
   dlg = new goog.fx.DragListGroup();
@@ -81,7 +82,7 @@ function setUp() {
   initialListenerCount = goog.object.getCount(dlg.eventHandler_.keys_);
 
   event = new goog.events.BrowserEvent();
-  event.currentTarget = list.getElementsByTagName('div')[0];
+  event.currentTarget = list.getElementsByTagName(goog.dom.TagName.DIV)[0];
 
   firedEventTypes = [];
   goog.events.listen(dlg,
@@ -114,13 +115,13 @@ function testSettersAfterInit() {
       ['blue_bg', 'opacity_40']));
 
   assertFalse('Should have no cursor_move class after init',
-      goog.dom.classes.has(event.currentTarget, 'cursor_move'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_move'));
   assertFalse('Should have no cursor_pointer class after init',
-      goog.dom.classes.has(event.currentTarget, 'cursor_pointer'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_pointer'));
   assertFalse('Should have no opacity_40 class after init',
-      goog.dom.classes.has(event.currentTarget, 'opacity_40'));
+      goog.dom.classlist.contains(event.currentTarget, 'opacity_40'));
   assertFalse('Should not have blue_bg class after init',
-      goog.dom.classes.has(event.currentTarget, 'blue_bg'));
+      goog.dom.classlist.contains(event.currentTarget, 'blue_bg'));
 }
 
 
@@ -134,26 +135,26 @@ function testAddDragItemHoverClasses() {
   dlg.handleDragItemMouseover_(event);
 
   assertTrue('Should have cursor_move class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'cursor_move'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_move'));
   assertTrue('Should have opacity_40 class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'opacity_40'));
+      goog.dom.classlist.contains(event.currentTarget, 'opacity_40'));
   assertFalse('Should not have cursor_pointer class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'cursor_pointer'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_pointer'));
   assertFalse('Should not have blue_bg class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'blue_bg'));
+      goog.dom.classlist.contains(event.currentTarget, 'blue_bg'));
 }
 
 function testAddDragItemHandleHoverClasses() {
   dlg.handleDragItemHandleMouseover_(event);
 
   assertFalse('Should not have cursor_move class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'cursor_move'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_move'));
   assertTrue('Should have opacity_40 class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'opacity_40'));
+      goog.dom.classlist.contains(event.currentTarget, 'opacity_40'));
   assertTrue('Should have cursor_pointer class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'cursor_pointer'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_pointer'));
   assertFalse('Should not have blue_bg class after MOUSEOVER',
-      goog.dom.classes.has(event.currentTarget, 'blue_bg'));
+      goog.dom.classlist.contains(event.currentTarget, 'blue_bg'));
 }
 
 
@@ -168,13 +169,13 @@ function testRemoveDragItemHoverClasses() {
   dlg.handleDragItemMouseout_(event);
 
   assertFalse('Should have no cursor_move class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'cursor_move'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_move'));
   assertFalse('Should have no cursor_pointer class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'cursor_pointer'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_pointer'));
   assertFalse('Should have no opacity_40 class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'opacity_40'));
+      goog.dom.classlist.contains(event.currentTarget, 'opacity_40'));
   assertFalse('Should have no blue_bg class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'blue_bg'));
+      goog.dom.classlist.contains(event.currentTarget, 'blue_bg'));
 }
 
 function testRemoveDragItemHandleHoverClasses() {
@@ -182,13 +183,13 @@ function testRemoveDragItemHandleHoverClasses() {
   dlg.handleDragItemHandleMouseout_(event);
 
   assertFalse('Should have no cursor_move class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'cursor_move'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_move'));
   assertFalse('Should have no cursor_pointer class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'cursor_pointer'));
+      goog.dom.classlist.contains(event.currentTarget, 'cursor_pointer'));
   assertFalse('Should have no opacity_40 class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'opacity_40'));
+      goog.dom.classlist.contains(event.currentTarget, 'opacity_40'));
   assertFalse('Should have no blue_bg class after MOUSEOUT',
-      goog.dom.classes.has(event.currentTarget, 'blue_bg'));
+      goog.dom.classlist.contains(event.currentTarget, 'blue_bg'));
 }
 
 
@@ -209,13 +210,13 @@ function testAddCurrentDragItemClasses() {
   dlg.handlePotentialDragStart_(event);
 
   assertFalse('Should have no cursor_move class after MOUSEDOWN',
-      goog.dom.classes.has(dlg.currDragItem_, 'cursor_move'));
+      goog.dom.classlist.contains(dlg.currDragItem_, 'cursor_move'));
   assertFalse('Should have no cursor_pointer class after MOUSEDOWN',
-      goog.dom.classes.has(dlg.currDragItem_, 'cursor_pointer'));
+      goog.dom.classlist.contains(dlg.currDragItem_, 'cursor_pointer'));
   assertTrue('Should have opacity_40 class after MOUSEDOWN',
-      goog.dom.classes.has(dlg.currDragItem_, 'opacity_40'));
+      goog.dom.classlist.contains(dlg.currDragItem_, 'opacity_40'));
   assertTrue('Should have blue_bg class after MOUSEDOWN',
-      goog.dom.classes.has(dlg.currDragItem_, 'blue_bg'));
+      goog.dom.classlist.contains(dlg.currDragItem_, 'blue_bg'));
 }
 
 
@@ -236,7 +237,8 @@ function testRemoveCurrentDragItemClasses() {
   // Need to catch the dispatched event because the temporary fields
   // including dlg.currentDragItem_ are cleared after the dragging has ended.
   var currDragItem = goog.dom.createDom(
-      'div', ['cursor_move', 'blue_bg'], goog.dom.createTextNode('4'));
+      goog.dom.TagName.DIV, ['cursor_move', 'blue_bg'],
+      goog.dom.createTextNode('4'));
   goog.events.listen(dlg, goog.fx.DragListGroup.EventType.DRAGEND,
       function(e) {currDragItem = dlg.currDragItem_;});
 
@@ -250,13 +252,13 @@ function testRemoveCurrentDragItemClasses() {
   dragger.dispose();
 
   assertFalse('Should have no cursor_move class after MOUSEUP',
-      goog.dom.classes.has(currDragItem, 'cursor_move'));
+      goog.dom.classlist.contains(currDragItem, 'cursor_move'));
   assertFalse('Should have no cursor_pointer class after MOUSEUP',
-      goog.dom.classes.has(currDragItem, 'cursor_pointer'));
+      goog.dom.classlist.contains(currDragItem, 'cursor_pointer'));
   assertFalse('Should have no opacity_40 class after MOUSEUP',
-      goog.dom.classes.has(currDragItem, 'opacity_40'));
+      goog.dom.classlist.contains(currDragItem, 'opacity_40'));
   assertFalse('Should have no blue_bg class after MOUSEUP',
-      goog.dom.classes.has(currDragItem, 'blue_bg'));
+      goog.dom.classlist.contains(currDragItem, 'blue_bg'));
 }
 
 
@@ -356,8 +358,8 @@ function testRightClick() {
  * been initialized.
  */
 function testAddItemToDragList() {
-  var item =
-      goog.dom.createDom('div', null, goog.dom.createTextNode('newItem'));
+  var item = goog.dom.createDom(goog.dom.TagName.DIV, null,
+                                goog.dom.createTextNode('newItem'));
 
   dlg.addItemToDragList(list, item);
 
@@ -379,8 +381,8 @@ function testAddItemToDragList() {
  * initialized is inserted at the correct position.
  */
 function testInsertItemInDragList() {
-  var item =
-      goog.dom.createDom('div', null, goog.dom.createTextNode('newItem'));
+  var item = goog.dom.createDom(goog.dom.TagName.DIV, null,
+                                goog.dom.createTextNode('newItem'));
 
   dlg.addItemToDragList(list, item, 0);
 

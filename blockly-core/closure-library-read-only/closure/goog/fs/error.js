@@ -49,6 +49,9 @@ goog.fs.Error = function(error, action) {
 
   if (goog.isDef(error.name)) {
     this.name = error.name;
+    // TODO(user): Remove warning suppression after JSCompiler stops
+    // firing a spurious warning here.
+    /** @suppress {deprecated} */
     this.code = goog.fs.Error.getCodeFromName_(error.name);
   } else {
     this.code = error.code;
@@ -138,7 +141,7 @@ goog.fs.Error.getCodeFromName_ = function(name) {
 /**
  * Mapping from error names to values from the ErrorCode enum.
  * @see http://www.w3.org/TR/file-system-api/#definitions.
- * @private {!Object.<string, goog.fs.Error.ErrorCode>}
+ * @private {!Object<string, goog.fs.Error.ErrorCode>}
  */
 goog.fs.Error.NameToCodeMap_ = goog.object.create(
     goog.fs.Error.ErrorName.ABORT,

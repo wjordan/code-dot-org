@@ -20,7 +20,15 @@
 goog.provide('goog.userAgentTestUtil');
 goog.provide('goog.userAgentTestUtil.UserAgents');
 
+goog.require('goog.labs.userAgent.browser');
+goog.require('goog.labs.userAgent.engine');
+goog.require('goog.labs.userAgent.platform');
 goog.require('goog.userAgent');
+goog.require('goog.userAgent.keyboard');
+goog.require('goog.userAgent.platform');
+goog.require('goog.userAgent.product');
+/** @suppress {extraRequire} */
+goog.require('goog.userAgent.product.isVersion');
 
 goog.setTestOnly('goog.userAgentTestUtil');
 
@@ -30,24 +38,53 @@ goog.setTestOnly('goog.userAgentTestUtil');
  * @suppress {accessControls}
  */
 goog.userAgentTestUtil.reinitializeUserAgent = function() {
-
-  goog.userAgent.init_();
-
   // Unfortunately we can't isolate the useragent setting in a function
   // we can call, because things rely on it compiling to nothing when
   // one of the ASSUME flags is set, and the compiler isn't smart enough
   // to do that when the setting is done inside a function that's inlined.
-  goog.userAgent.OPERA = goog.userAgent.detectedOpera_;
-  goog.userAgent.IE = goog.userAgent.detectedIe_;
-  goog.userAgent.GECKO = goog.userAgent.detectedGecko_;
-  goog.userAgent.WEBKIT = goog.userAgent.detectedWebkit_;
-  goog.userAgent.MOBILE = goog.userAgent.detectedMobile_;
+  goog.userAgent.OPERA = goog.labs.userAgent.browser.isOpera();
+  goog.userAgent.IE = goog.labs.userAgent.browser.isIE();
+  goog.userAgent.EDGE = goog.labs.userAgent.engine.isEdge();
+  goog.userAgent.GECKO = goog.labs.userAgent.engine.isGecko();
+  goog.userAgent.WEBKIT = goog.labs.userAgent.engine.isWebKit();
+  goog.userAgent.MOBILE = goog.userAgent.isMobile_();
   goog.userAgent.SAFARI = goog.userAgent.WEBKIT;
 
-
-  goog.userAgent.initPlatform_();
+  // Platform in goog.userAgent.
   goog.userAgent.PLATFORM = goog.userAgent.determinePlatform_();
+
+  goog.userAgent.MAC = goog.labs.userAgent.platform.isMacintosh();
+  goog.userAgent.WINDOWS = goog.labs.userAgent.platform.isWindows();
+  goog.userAgent.LINUX = goog.userAgent.isLegacyLinux_();
+  goog.userAgent.X11 = goog.userAgent.isX11_();
+  goog.userAgent.ANDROID = goog.labs.userAgent.platform.isAndroid();
+  goog.userAgent.IPAD = goog.labs.userAgent.platform.isIpad();
+  goog.userAgent.IPHONE = goog.labs.userAgent.platform.isIphone();
   goog.userAgent.VERSION = goog.userAgent.determineVersion_();
+
+  // Platform in goog.userAgent.platform.
+  goog.userAgent.platform.VERSION = goog.userAgent.platform.determineVersion_();
+
+  // Update goog.userAgent.product
+  goog.userAgent.product.ANDROID =
+      goog.labs.userAgent.browser.isAndroidBrowser();
+  goog.userAgent.product.CHROME =
+      goog.labs.userAgent.browser.isChrome();
+  goog.userAgent.product.FIREFOX =
+      goog.labs.userAgent.browser.isFirefox();
+  goog.userAgent.product.IE =
+      goog.labs.userAgent.browser.isIE();
+  goog.userAgent.product.IPAD = goog.labs.userAgent.platform.isIpad();
+  goog.userAgent.product.IPHONE = goog.userAgent.product.isIphoneOrIpod_();
+  goog.userAgent.product.OPERA = goog.labs.userAgent.browser.isOpera();
+  goog.userAgent.product.SAFARI = goog.userAgent.product.isSafariDesktop_();
+
+  // Still uses its own implementation.
+  goog.userAgent.product.VERSION = goog.userAgent.product.determineVersion_();
+
+  // goog.userAgent.keyboard
+  goog.userAgent.keyboard.MAC_KEYBOARD =
+      goog.userAgent.keyboard.determineMacKeyboard_();
 };
 
 
@@ -59,7 +96,8 @@ goog.userAgentTestUtil.UserAgents = {
   GECKO: 'GECKO',
   IE: 'IE',
   OPERA: 'OPERA',
-  WEBKIT: 'WEBKIT'
+  WEBKIT: 'WEBKIT',
+  EDGE: 'EDGE'
 };
 
 
@@ -74,6 +112,8 @@ goog.userAgentTestUtil.getUserAgentDetected = function(agent) {
       return goog.userAgent.GECKO;
     case goog.userAgentTestUtil.UserAgents.IE:
       return goog.userAgent.IE;
+    case goog.userAgentTestUtil.UserAgents.EDGE:
+      return goog.userAgent.EDGE;
     case goog.userAgentTestUtil.UserAgents.OPERA:
       return goog.userAgent.OPERA;
     case goog.userAgentTestUtil.UserAgents.WEBKIT:

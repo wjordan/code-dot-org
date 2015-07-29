@@ -133,8 +133,36 @@ function testFilter() {
   });
 
   assertEquals('68', goog.iter.join(evens2, ''));
-  // Not the order here. The next calls are done lazily
+  // Note the order here. The next calls are done lazily.
   assertEquals('a0b0a1a2b2a3a4b4a5a6b6a7a8b8a9', sb.join(''));
+
+}
+
+function testFilterFalse() {
+  var iter = goog.iter.range(5);
+  var iter2 = goog.iter.filterFalse(iter, function(val, index, iter3) {
+    assertEquals(iter, iter3);
+    assertEquals('index should be undefined', 'undefined', typeof index);
+    return val < 2;
+  });
+
+  assertEquals('234', goog.iter.join(iter2, ''));
+
+  // Chaining filters
+  iter = goog.iter.range(10);
+  var sb = [];
+  var odds = goog.iter.filterFalse(iter, function(v) {
+    sb.push('a' + v);
+    return v % 2 == 0;
+  });
+  var odds2 = goog.iter.filterFalse(odds, function(v) {
+    sb.push('b' + v);
+    return v <= 5;
+  });
+
+  assertEquals('79', goog.iter.join(odds2, ''));
+  // Note the order here. The next calls are done lazily.
+  assertEquals('a0a1b1a2a3b3a4a5b5a6a7b7a8a9b9', sb.join(''));
 
 }
 
@@ -231,6 +259,12 @@ function testChainFromIterable() {
   var arg2 = [2, 3];
   var arg3 = goog.iter.range(4, 6);
   var iter = goog.iter.chainFromIterable([arg, arg2, arg3]);
+  assertEquals('012345', goog.iter.join(iter, ''));
+}
+
+function testChainFromIterable2() {
+  var arg = goog.iter.zip([0, 3], [1, 4], [2, 5]);
+  var iter = goog.iter.chainFromIterable(arg);
   assertEquals('012345', goog.iter.join(iter, ''));
 }
 
@@ -331,6 +365,14 @@ function testEquals() {
 
   iter = goog.iter.range(4);
   assertFalse('Same iterator', goog.iter.equals(iter, iter));
+
+  // equality function
+  iter = goog.iter.toIterator(['A', 'B', 'C']);
+  iter2 = goog.iter.toIterator(['a', 'b', 'c']);
+  var equalsFn = function(a, b) {
+    return a.toLowerCase() == b.toLowerCase();
+  };
+  assertTrue('Case-insensitive equal', goog.iter.equals(iter, iter2, equalsFn));
 }
 
 
@@ -653,6 +695,29 @@ function testGroupByKeyFunc() {
   assertArrayEquals(['b', ['B', 'B', 'b', 'b', 'B']], iter.next());
   assertArrayEquals(['c', ['C', 'c', 'c']], iter.next());
   assertArrayEquals(['d', ['d', 'd', 'D', 'D']], iter.next());
+  var ex = assertThrows(function() { iter.next() });
+  assertEquals(goog.iter.StopIteration, ex);
+}
+
+function testStarMap() {
+  var iter = goog.iter.starMap([[2, 5], [3, 2], [10, 3]], Math.pow);
+  assertEquals(32, iter.next());
+  assertEquals(9, iter.next());
+  assertEquals(1000, iter.next());
+  var ex = assertThrows(function() { iter.next() });
+  assertEquals(goog.iter.StopIteration, ex);
+}
+
+function testStarMapExtraArgs() {
+  var func = function(string, radix, undef, iterator) {
+    assertEquals('undef should be undefined', 'undefined', typeof undef);
+    assertTrue(iterator instanceof goog.iter.Iterator);
+    return parseInt(string, radix);
+  };
+  var iter = goog.iter.starMap([['42', 10], ['0xFF', 16], ['101', 2]], func);
+  assertEquals(42, iter.next());
+  assertEquals(255, iter.next());
+  assertEquals(5, iter.next());
   var ex = assertThrows(function() { iter.next() });
   assertEquals(goog.iter.StopIteration, ex);
 }

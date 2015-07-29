@@ -86,14 +86,14 @@ goog.net.FileDownloader = function(dir, opt_pool) {
 
   /**
    * A map from URLs to active downloads running for those URLs.
-   * @type {!Object.<!goog.net.FileDownloader.Download_>}
+   * @type {!Object<!goog.net.FileDownloader.Download_>}
    * @private
    */
   this.downloads_ = {};
 
   /**
    * The handler for URL capturing events.
-   * @type {!goog.events.EventHandler.<!goog.net.FileDownloader>}
+   * @type {!goog.events.EventHandler<!goog.net.FileDownloader>}
    * @private
    */
   this.eventHandler_ = new goog.events.EventHandler(this);
@@ -224,7 +224,7 @@ goog.net.FileDownloader.prototype.isDownloaded = function(url) {
     deferred.callback(true);
   });
   blobDeferred.addErrback(function(err) {
-    if (err.code == goog.fs.Error.ErrorCode.NOT_FOUND) {
+    if (err.name == goog.fs.Error.ErrorName.NOT_FOUND) {
       deferred.callback(false);
     } else {
       deferred.errback(err);

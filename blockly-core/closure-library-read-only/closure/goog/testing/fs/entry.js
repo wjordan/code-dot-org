@@ -140,13 +140,14 @@ goog.testing.fs.Entry.prototype.copyTo = function(parent, opt_newName) {
   goog.asserts.assert(parent instanceof goog.testing.fs.DirectoryEntry);
   var msg = 'copying ' + this.getFullPath() + ' into ' + parent.getFullPath() +
       (opt_newName ? ', renaming to ' + opt_newName : '');
+  var self = this;
   return this.checkNotDeleted(msg).addCallback(function() {
-    var name = opt_newName || this.getName();
-    var entry = this.clone();
+    var name = opt_newName || self.getName();
+    var entry = self.clone();
     parent.children[name] = entry;
     parent.lastModifiedTimestamp_ = goog.now();
     entry.name_ = name;
-    entry.parent = parent;
+    entry.parent = /** @type {!goog.testing.fs.DirectoryEntry} */ (parent);
     return entry;
   });
 };
@@ -175,10 +176,11 @@ goog.testing.fs.Entry.prototype.wrapEntry = goog.abstractMethod;
 /** @override */
 goog.testing.fs.Entry.prototype.remove = function() {
   var msg = 'removing ' + this.getFullPath();
+  var self = this;
   return this.checkNotDeleted(msg).addCallback(function() {
-    delete this.parent.children[this.getName()];
-    this.parent.lastModifiedTimestamp_ = goog.now();
-    this.deleted = true;
+    delete this.parent.children[self.getName()];
+    self.parent.lastModifiedTimestamp_ = goog.now();
+    self.deleted = true;
     return;
   });
 };
@@ -228,7 +230,7 @@ goog.testing.fs.Entry.prototype.checkNotDeleted = function(action) {
  *     containing this entry. If this is null, that means this is the root
  *     directory and so is its own parent.
  * @param {string} name The name of this entry.
- * @param {!Object.<!goog.testing.fs.Entry>} children The map of child names to
+ * @param {!Object<!goog.testing.fs.Entry>} children The map of child names to
  *     entry objects.
  * @constructor
  * @extends {goog.testing.fs.Entry}
@@ -241,7 +243,7 @@ goog.testing.fs.DirectoryEntry = function(fs, parent, name, children) {
 
   /**
    * The map of child names to entry objects.
-   * @type {!Object.<!goog.testing.fs.Entry>}
+   * @type {!Object<!goog.testing.fs.Entry>}
    */
   this.children = children;
 
@@ -359,16 +361,19 @@ goog.testing.fs.DirectoryEntry.prototype.getDirectory = function(
  * @param {string} path The path to the file, relative to this directory.
  * @param {goog.fs.DirectoryEntry.Behavior=} opt_behavior The behavior for
  *     loading the file.
+ * @param {string=} opt_data The string data encapsulated by the blob.
+ * @param {string=} opt_type The mime type of the blob.
  * @return {!goog.testing.fs.FileEntry} The loaded file.
  */
 goog.testing.fs.DirectoryEntry.prototype.getFileSync = function(
-    path, opt_behavior) {
+    path, opt_behavior, opt_data, opt_type) {
   opt_behavior = opt_behavior || goog.fs.DirectoryEntry.Behavior.DEFAULT;
   return (/** @type {!goog.testing.fs.FileEntry} */ (this.getEntry_(
       path, opt_behavior, true /* isFile */,
       goog.bind(function(parent, name) {
         return new goog.testing.fs.FileEntry(
-            this.getFileSystem(), parent, name, '');
+            this.getFileSystem(), parent, name,
+            goog.isDef(opt_data) ? opt_data : '', opt_type);
       }, this))));
 };
 
@@ -536,12 +541,13 @@ goog.testing.fs.DirectoryEntry.prototype.createPath =
  *     containing this entry.
  * @param {string} name The name of this entry.
  * @param {string} data The data initially contained in the file.
+ * @param {string=} opt_type The mime type of the blob.
  * @constructor
  * @extends {goog.testing.fs.Entry}
  * @implements {goog.fs.FileEntry}
  * @final
  */
-goog.testing.fs.FileEntry = function(fs, parent, name, data) {
+goog.testing.fs.FileEntry = function(fs, parent, name, data, opt_type) {
   goog.testing.fs.FileEntry.base(this, 'constructor', fs, parent, name);
 
   /**
@@ -549,7 +555,8 @@ goog.testing.fs.FileEntry = function(fs, parent, name, data) {
    * @type {!goog.testing.fs.File}
    * @private
    */
-  this.file_ = new goog.testing.fs.File(name, new Date(goog.now()), data);
+  this.file_ =
+      new goog.testing.fs.File(name, new Date(goog.now()), data, opt_type);
 
   /**
    * The metadata for file.

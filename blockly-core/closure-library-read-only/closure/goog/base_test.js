@@ -23,13 +23,18 @@ goog.provide('goog.baseTest');
 
 goog.setTestOnly('goog.baseTest');
 
+goog.require('goog.Promise');
 // Used to test dynamic loading works, see testRequire*
 goog.require('goog.Timer');
+goog.require('goog.dom.TagName');
 goog.require('goog.functions');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
 goog.require('goog.userAgent');
+
+goog.require('goog.test_module');
+var earlyTestModuleGet = goog.module.get('goog.test_module');
 
 function getFramedVars(name) {
   var w = window.frames[name];
@@ -134,9 +139,6 @@ function testIsProvided() {
 }
 
 function testGlobalize() {
-  goog.globalize(goog);
-  assertNotUndefined('Globalize goog', provide);
-
   var a = {a: 1, b: 2, c: 3};
   var b = {};
   goog.globalize(a, b);
@@ -278,7 +280,7 @@ function testIsDef() {
   var notDefined;
 
   assertTrue('defined should be defined', goog.isDef(defined));
-  assertTrue('null should be defined', goog.isDef(defined));
+  assertTrue('null should be defined', goog.isDef(nullVar));
   assertFalse('undefined should not be defined', goog.isDef(notDefined));
 }
 
@@ -335,30 +337,28 @@ function testIsArray() {
 }
 
 function testTypeOfAcrossWindow() {
-  if (goog.userAgent.WEBKIT && goog.userAgent.MAC) {
-    // The server farm has issues with new windows on Safari Mac.
+  if (goog.userAgent.IE && goog.userAgent.isVersionOrHigher('10') &&
+      !goog.userAgent.isVersionOrHigher('11')) {
+    // TODO(johnlenz): This test is flaky on IE10 (passing 90+% of the time).
+    // When it flakes the values are undefined which appears to indicate the
+    // script did not run in the opened window and not a failure of the logic
+    // we are trying to test.
     return;
   }
 
   var w = window.open('', 'blank');
   if (w) {
     try {
-      try {
-        var d = w.document;
-        d.open();
-        d.write('<script>function fun(){};' +
-                'var arr = [];' +
-                'var x = 42;' +
-                'var s = "";' +
-                'var b = true;' +
-                'var obj = {length: 0, splice: {}, call: {}};' +
-                '</' + 'script>');
-        d.close();
-      } catch (ex) {
-        // In Firefox Linux on the server farm we don't have access to
-        // w.document.
-        return;
-      }
+      var d = w.document;
+      d.open();
+      d.write('<script>function fun(){};' +
+              'var arr = [];' +
+              'var x = 42;' +
+              'var s = "";' +
+              'var b = true;' +
+              'var obj = {length: 0, splice: {}, call: {}};' +
+              '</' + 'script>');
+      d.close();
 
       assertEquals('function', goog.typeOf(w.fun));
       assertEquals('array', goog.typeOf(w.arr));
@@ -535,7 +535,7 @@ function testRemoveUidFromObjectWithoutUid() {
 }
 
 function testRemoveUidFromNode() {
-  var node = document.createElement('div');
+  var node = document.createElement(goog.dom.TagName.DIV);
   var nodeUid = goog.getUid(node);
   goog.removeUid(node);
   assertNotEquals("A node's old and new unique IDs should be different",
@@ -571,14 +571,14 @@ function testConstructorUid() {
  * property set but undefined. See bug 1252508.
  */
 function testUidNotUndefinedOnReusedElement() {
-  var div = document.createElement('DIV');
+  var div = document.createElement(goog.dom.TagName.DIV);
   document.body.appendChild(div);
   div.innerHTML = '<form id="form"></form>';
-  var span = div.getElementsByTagName('FORM')[0];
+  var span = div.getElementsByTagName(goog.dom.TagName.FORM)[0];
   goog.getUid(span);
 
   div.innerHTML = '<form id="form"></form>';
-  var span2 = div.getElementsByTagName('FORM')[0];
+  var span2 = div.getElementsByTagName(goog.dom.TagName.FORM)[0];
   assertNotUndefined(goog.getUid(span2));
 }
 
@@ -601,7 +601,7 @@ function testClonePrimitive() {
 function testCloneObjectThatHasACloneMethod() {
   var original = {
     name: 'original',
-    clone: function() { return { name: 'clone' } }
+    clone: function() { return { name: 'clone' }; }
   };
 
   var clone = goog.cloneObject(original);
@@ -839,7 +839,6 @@ function testPartialMultipleCalls() {
   assertArrayEquals(['foo', 'bar'], calls[3].getArguments());
 }
 
-
 function testGlobalEval() {
   goog.globalEval('var foofoofoo = 125;');
   assertEquals('Var should be globally assigned', 125, goog.global.foofoofoo);
@@ -996,14 +995,16 @@ function testGetMsgWithDollarSigns() {
 }
 
 
-//=== miscellaneous tests ===
+function testGetMsgWithPlaceholders() {
+  var msg = goog.getMsg('{$a} has {$b}', {a: '{$b}', b: 1});
+  assertEquals('{$b} has 1', msg);
 
-function testIdentity() {
-  assertEquals(3, goog.identityFunction(3));
-  assertEquals(3, goog.identityFunction(3, 4));
-  assertEquals(null, goog.identityFunction(null));
-  assertTrue(goog.identityFunction() === undefined);
+  msg = goog.getMsg('{$a}{$b}', {b: ''});
+  assertEquals('{$a}', msg);
 }
+
+
+//=== miscellaneous tests ===
 
 function testGetObjectByName() {
   var m = {
@@ -1314,6 +1315,32 @@ function testGoogRequireCheck() {
   delete far;
 }
 
+function diables_testCspSafeGoogRequire() {
+  if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('10')) {
+    return;
+  }
+
+  stubs.set(goog, 'ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING', true);
+
+  // Aliased so that build tools do not mistake this for an actual call.
+  var require = goog.require;
+
+  require('goog.Uri');
+
+  // Set a timeout to allow the user agent to finish parsing this script block,
+  // thus allowing the appended script (via goog.require) to execute.
+  var ASYNC_TIMEOUT_MS = 1000;
+
+  var resolver = goog.Promise.withResolver();
+  window.setTimeout(function() {
+    assertNotUndefined(goog.Uri);
+    resolver.resolve();
+    stubs.reset();
+  }, ASYNC_TIMEOUT_MS);
+
+  return resolver.promise;
+}
+
 function testLateRequireProtection() {
   if (!document.readyState) return;
   var e = assertThrows(function() {
@@ -1323,4 +1350,179 @@ function testLateRequireProtection() {
   });
 
   assertContains('after document load', e.message);
+}
+
+function testDefineClass() {
+  var Base = goog.defineClass(null, {
+    constructor: function(foo) {
+      this.foo = foo;
+    },
+    statics: {
+      x: 42
+    },
+    frobnicate: function() {
+      return this.foo + this.foo;
+    }
+  });
+  var Derived = goog.defineClass(Base, {
+    constructor: function() {
+      Derived.base(this, 'constructor', 'bar');
+    },
+    frozzle: function(foo) {
+      this.foo = foo;
+    }
+  });
+
+  assertEquals(42, Base.x);
+  var der = new Derived();
+  assertEquals('barbar', der.frobnicate());
+  der.frozzle('qux');
+  assertEquals('quxqux', der.frobnicate());
+}
+
+function testDefineClass_interface() {
+  var Interface = goog.defineClass(null, {
+    statics: {
+      foo: 'bar'
+    },
+    qux: function() {}
+  });
+  assertEquals('bar', Interface.foo);
+  assertThrows(function() { new Interface(); });
+}
+
+function testDefineClass_seals() {
+  if (!(Object.seal instanceof Function)) return; // IE<9 doesn't have seal
+  var A = goog.defineClass(null, {
+    constructor: function() {}
+  });
+  var a = new A();
+  try {
+    a.foo = 'bar';
+  } catch (expectedInStrictModeOnly) { /* ignored */ }
+  assertEquals(undefined, a.foo);
+}
+
+function testDefineClass_unsealable() {
+  var LegacyBase = function() {};
+  LegacyBase.prototype.foo = null;
+  LegacyBase.prototype.setFoo = function(foo) {
+    this.foo = foo;
+  };
+  goog.tagUnsealableClass(LegacyBase);
+
+  var Derived = goog.defineClass(LegacyBase, {
+    constructor: function() {}
+  });
+
+  var der = new Derived();
+  der.setFoo('bar');
+  assertEquals('bar', der.foo);
+}
+
+// Validate the behavior of goog.module when used from traditional files.
+function testGoogModuleGet() {
+  // assert that goog.module doesn't modify the global namespace
+  assertUndefined('module failed to protect global namespace: ' +
+      'goog.test_module_dep', goog.test_module_dep);
+
+  // assert that goog.module with goog.module.declareLegacyNamespace is present.
+  assertNotUndefined('module failed to declare global namespace: ' +
+      'goog.test_module', goog.test_module);
+
+  // assert that a require'd goog.module is available immediately after the
+  // goog.require call.
+  assertNotUndefined('module failed to protect global namespace: ' +
+      'goog.test_module_dep', earlyTestModuleGet);
+
+
+  // assert that an non-existent module request doesn't throw and returns null.
+  assertEquals(null, goog.module.get('unrequired.module.id'));
+
+  // Validate the module exports
+  var testModuleExports = goog.module.get('goog.test_module');
+  assertTrue(goog.isFunction(testModuleExports));
+
+  // Validate that the module exports object has not changed
+  assertEquals(earlyTestModuleGet, testModuleExports);
+}
+
+
+function testLoadFileSync() {
+  var fileContents = goog.loadFileSync_('deps.js');
+  assertTrue('goog.loadFileSync_ returns string',
+      typeof fileContents === 'string');
+  assertTrue('goog.loadFileSync_ string length > 0', fileContents.length > 0);
+
+  stubs.set(goog.global, 'CLOSURE_LOAD_FILE_SYNC', function(src) {
+    return 'closure load file sync: ' + src;
+  });
+
+  assertEquals('goog.CLOSURE_LOAD_FILE_SYNC override',
+      goog.loadFileSync_('test url'), 'closure load file sync: test url');
+}
+
+
+function testNormalizePath1() {
+  assertEquals('foo/path.js', goog.normalizePath_('./foo/./path.js'));
+  assertEquals('foo/path.js', goog.normalizePath_('bar/../foo/path.js'));
+  assertEquals('bar/path.js', goog.normalizePath_('bar/foo/../path.js'));
+  assertEquals('path.js', goog.normalizePath_('bar/foo/../../path.js'));
+
+  assertEquals('../foo/path.js', goog.normalizePath_('../foo/path.js'));
+  assertEquals('../../foo/path.js', goog.normalizePath_('../../foo/path.js'));
+  assertEquals('../path.js', goog.normalizePath_('../foo/../path.js'));
+  assertEquals('../../path.js', goog.normalizePath_('../foo/../../path.js'));
+
+  assertEquals('/../foo/path.js', goog.normalizePath_('/../foo/path.js'));
+  assertEquals('/path.js', goog.normalizePath_('/foo/../path.js'));
+  assertEquals('/foo/path.js', goog.normalizePath_('/./foo/path.js'));
+
+  assertEquals('//../foo/path.js', goog.normalizePath_('//../foo/path.js'));
+  assertEquals('//path.js', goog.normalizePath_('//foo/../path.js'));
+  assertEquals('//foo/path.js', goog.normalizePath_('//./foo/path.js'));
+
+  assertEquals('http://../x/y.js', goog.normalizePath_('http://../x/y.js'));
+  assertEquals('http://path.js', goog.normalizePath_('http://foo/../path.js'));
+  assertEquals('http://x/path.js', goog.normalizePath_('http://./x/path.js'));
+}
+
+
+
+
+function testGoogModuleNames() {
+  // avoid usage checks
+  var module = goog.module;
+
+  function assertInvalidId(id) {
+    var err = assertThrows(function() {
+      module(id);
+    });
+    assertEquals('Invalid module identifier', err.message);
+  }
+
+  function assertValidId(id) {
+    // This is a cheesy check, but we validate that we don't get an invalid
+    // namespace warning, but instead get a module isn't loaded correctly
+    // error.
+    var err = assertThrows(function() {
+      module(id);
+    });
+    assertTrue(err.message.indexOf('has been loaded incorrectly') != -1);
+  }
+
+  assertInvalidId('/somepath/module.js');
+  assertInvalidId('./module.js');
+  assertInvalidId('1');
+
+  assertValidId('a');
+  assertValidId('a.b');
+  assertValidId('a.b.c');
+  assertValidId('aB.Cd.eF');
+  assertValidId('a1.0E.Fg');
+
+  assertValidId('_');
+  assertValidId('$');
+  assertValidId('_$');
+  assertValidId('$_');
 }

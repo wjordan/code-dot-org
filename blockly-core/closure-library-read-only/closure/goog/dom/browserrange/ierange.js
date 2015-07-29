@@ -18,8 +18,6 @@
  * DO NOT USE THIS FILE DIRECTLY.  Use goog.dom.Range instead.
  *
  * @author robbyw@google.com (Robby Walker)
- * @author ojan@google.com (Ojan Vafai)
- * @author jparent@google.com (Julie Parent)
  */
 
 
@@ -46,16 +44,44 @@ goog.require('goog.string');
  */
 goog.dom.browserrange.IeRange = function(range, doc) {
   /**
+   * Lazy cache of the node containing the entire selection.
+   * @private {Node}
+   */
+  this.parentNode_ = null;
+
+  /**
+   * Lazy cache of the node containing the start of the selection.
+   * @private {Node}
+   */
+  this.startNode_ = null;
+
+  /**
+   * Lazy cache of the node containing the end of the selection.
+   * @private {Node}
+   */
+  this.endNode_ = null;
+
+  /**
+   * Lazy cache of the offset in startNode_ where this range starts.
+   * @private {number}
+   */
+  this.startOffset_ = -1;
+
+  /**
+   * Lazy cache of the offset in endNode_ where this range ends.
+   * @private {number}
+   */
+  this.endOffset_ = -1;
+
+  /**
    * The browser range object this class wraps.
-   * @type {TextRange}
-   * @private
+   * @private {TextRange}
    */
   this.range_ = range;
 
   /**
    * The document the range exists in.
-   * @type {Document}
-   * @private
+   * @private {Document}
    */
   this.doc_ = doc;
 };
@@ -75,7 +101,7 @@ goog.dom.browserrange.IeRange.logger_ =
 /**
  * Returns a browser range spanning the given node's contents.
  * @param {Node} node The node to select.
- * @return {TextRange} A browser range spanning the node's contents.
+ * @return {!TextRange} A browser range spanning the node's contents.
  * @private
  */
 goog.dom.browserrange.IeRange.getBrowserRangeForNode_ = function(node) {
@@ -131,7 +157,7 @@ goog.dom.browserrange.IeRange.getBrowserRangeForNode_ = function(node) {
  * @param {number} startOffset The offset within the start node.
  * @param {Node} endNode The node to end with.
  * @param {number} endOffset The offset within the end node.
- * @return {TextRange} A browser range spanning the node's contents.
+ * @return {!TextRange} A browser range spanning the node's contents.
  * @private
  */
 goog.dom.browserrange.IeRange.getBrowserRangeForNodes_ = function(startNode,
@@ -200,7 +226,7 @@ goog.dom.browserrange.IeRange.getBrowserRangeForNodes_ = function(startNode,
 /**
  * Create a range object that selects the given node's text.
  * @param {Node} node The node to select.
- * @return {goog.dom.browserrange.IeRange} An IE range wrapper object.
+ * @return {!goog.dom.browserrange.IeRange} An IE range wrapper object.
  */
 goog.dom.browserrange.IeRange.createFromNodeContents = function(node) {
   var range = new goog.dom.browserrange.IeRange(
@@ -244,7 +270,7 @@ goog.dom.browserrange.IeRange.createFromNodeContents = function(node) {
  * @param {number} startOffset The offset within the start node.
  * @param {Node} endNode The node to end with.
  * @param {number} endOffset The offset within the end node.
- * @return {goog.dom.browserrange.AbstractRange} A wrapper object.
+ * @return {!goog.dom.browserrange.AbstractRange} A wrapper object.
  */
 goog.dom.browserrange.IeRange.createFromNodes = function(startNode,
     startOffset, endNode, endOffset) {
@@ -260,52 +286,8 @@ goog.dom.browserrange.IeRange.createFromNodes = function(startNode,
 };
 
 
-// Even though goog.dom.TextRange does similar caching to below, keeping these
-// caches allows for better performance in the get*Offset methods.
-
-
 /**
- * Lazy cache of the node containing the entire selection.
- * @type {Node}
- * @private
- */
-goog.dom.browserrange.IeRange.prototype.parentNode_ = null;
-
-
-/**
- * Lazy cache of the node containing the start of the selection.
- * @type {Node}
- * @private
- */
-goog.dom.browserrange.IeRange.prototype.startNode_ = null;
-
-
-/**
- * Lazy cache of the node containing the end of the selection.
- * @type {Node}
- * @private
- */
-goog.dom.browserrange.IeRange.prototype.endNode_ = null;
-
-
-/**
- * Lazy cache of the offset in startNode_ where this range starts.
- * @type {number}
- * @private
- */
-goog.dom.browserrange.IeRange.prototype.startOffset_ = -1;
-
-
-/**
- * Lazy cache of the offset in endNode_ where this range ends.
- * @type {number}
- * @private
- */
-goog.dom.browserrange.IeRange.prototype.endOffset_ = -1;
-
-
-/**
- * @return {goog.dom.browserrange.IeRange} A clone of this range.
+ * @return {!goog.dom.browserrange.IeRange} A clone of this range.
  * @override
  */
 goog.dom.browserrange.IeRange.prototype.clone = function() {
@@ -807,7 +789,7 @@ goog.dom.browserrange.IeRange.prototype.removeContents = function() {
 
 /**
  * @param {TextRange} range The range to get a dom helper for.
- * @return {goog.dom.DomHelper} A dom helper for the document the range
+ * @return {!goog.dom.DomHelper} A dom helper for the document the range
  *     resides in.
  * @private
  */
@@ -902,7 +884,7 @@ goog.dom.browserrange.IeRange.insertNode_ = function(clone, node,
 
   clone.collapse(before);
   node = goog.dom.browserrange.IeRange.pasteElement_(clone,
-      /** @type {Element} */ (node), opt_domHelper);
+      /** @type {!Element} */ (node), opt_domHelper);
 
   // If we didn't want an element, unwrap the element and return the node.
   if (isNonElement) {

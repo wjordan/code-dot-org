@@ -60,15 +60,26 @@ goog.define('goog.i18n.bidi.FORCE_RTL', false);
  * TODO(user): write a test that checks that this is a compile-time constant.
  */
 goog.i18n.bidi.IS_RTL = goog.i18n.bidi.FORCE_RTL ||
-    (goog.LOCALE.substring(0, 2).toLowerCase() == 'ar' ||
-     goog.LOCALE.substring(0, 2).toLowerCase() == 'fa' ||
-     goog.LOCALE.substring(0, 2).toLowerCase() == 'he' ||
-     goog.LOCALE.substring(0, 2).toLowerCase() == 'iw' ||
-     goog.LOCALE.substring(0, 2).toLowerCase() == 'ur' ||
-     goog.LOCALE.substring(0, 2).toLowerCase() == 'yi') &&
-    (goog.LOCALE.length == 2 ||
-     goog.LOCALE.substring(2, 3) == '-' ||
-     goog.LOCALE.substring(2, 3) == '_');
+    (
+        (goog.LOCALE.substring(0, 2).toLowerCase() == 'ar' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'fa' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'he' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'iw' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'ps' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'sd' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'ug' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'ur' ||
+         goog.LOCALE.substring(0, 2).toLowerCase() == 'yi') &&
+        (goog.LOCALE.length == 2 ||
+         goog.LOCALE.substring(2, 3) == '-' ||
+         goog.LOCALE.substring(2, 3) == '_')
+    ) || (
+        goog.LOCALE.length >= 3 &&
+        goog.LOCALE.substring(0, 3).toLowerCase() == 'ckb' &&
+        (goog.LOCALE.length == 3 ||
+         goog.LOCALE.substring(3, 4) == '-' ||
+         goog.LOCALE.substring(3, 4) == '_')
+    );
 
 
 /**
@@ -107,13 +118,7 @@ goog.i18n.bidi.Dir = {
   /**
    * Neither left-to-right nor right-to-left.
    */
-  NEUTRAL: 0,
-
-  /**
-   * A historical misnomer for NEUTRAL.
-   * @deprecated For "neutral", use NEUTRAL; for "unknown", use null.
-   */
-  UNKNOWN: 0
+  NEUTRAL: 0
 };
 
 
@@ -198,7 +203,8 @@ goog.i18n.bidi.ltrChars_ =
  * @type {string}
  * @private
  */
-goog.i18n.bidi.rtlChars_ = '\u0591-\u07FF\u200F\uFB1D-\uFDFF\uFE70-\uFEFC';
+goog.i18n.bidi.rtlChars_ =
+    '\u0591-\u06EF\u06FA-\u07FF\u200F\uFB1D-\uFDFF\uFE70-\uFEFC';
 
 
 /**
@@ -506,7 +512,8 @@ goog.i18n.bidi.isRtlExitText = goog.i18n.bidi.endsWithRtl;
  * @private
  */
 goog.i18n.bidi.rtlLocalesRe_ = new RegExp(
-    '^(ar|dv|he|iw|fa|nqo|ps|sd|ug|ur|yi|.*[-_](Arab|Hebr|Thaa|Nkoo|Tfng))' +
+    '^(ar|ckb|dv|he|iw|fa|nqo|ps|sd|ug|ur|yi|' +
+    '.*[-_](Arab|Hebr|Thaa|Nkoo|Tfng))' +
     '(?!.*[-_](Latn|Cyrl)($|-|_))($|-|_)',
     'i');
 
@@ -527,7 +534,7 @@ goog.i18n.bidi.rtlLocalesRe_ = new RegExp(
  * The languages usually written in a right-to-left script are taken as those
  * with Suppress-Script: Hebr|Arab|Thaa|Nkoo|Tfng  in
  * http://www.iana.org/assignments/language-subtag-registry,
- * as well as Sindhi (sd) and Uyghur (ug).
+ * as well as Central (or Sorani) Kurdish (ckb), Sindhi (sd) and Uyghur (ug).
  * Other subtags of the language code, e.g. regions like EG (Egypt), are
  * ignored.
  * @param {string} lang BCP 47 (a.k.a III) language code.
@@ -749,10 +756,20 @@ goog.i18n.bidi.wordSeparatorRe_ = /\s+/;
  * Regular expression to check if a string contains any numerals. Used to
  * differentiate between completely neutral strings and those containing
  * numbers, which are weakly LTR.
+ *
+ * Native Arabic digits (\u0660 - \u0669) are not included because although they
+ * do flow left-to-right inside a number, this is the case even if the  overall
+ * directionality is RTL, and a mathematical expression using these digits is
+ * supposed to flow right-to-left overall, including unary plus and minus
+ * appearing to the right of a number, and this does depend on the overall
+ * directionality being RTL. The digits used in Farsi (\u06F0 - \u06F9), on the
+ * other hand, are included, since Farsi math (including unary plus and minus)
+ * does flow left-to-right.
+ *
  * @type {RegExp}
  * @private
  */
-goog.i18n.bidi.hasNumeralsRe_ = /\d/;
+goog.i18n.bidi.hasNumeralsRe_ = /[\d\u06f0-\u06f9]/;
 
 
 /**
@@ -833,9 +850,30 @@ goog.i18n.bidi.setElementDirAndAlign = function(element, dir) {
     dir = goog.i18n.bidi.toDir(dir);
     if (dir) {
       element.style.textAlign =
-          dir == goog.i18n.bidi.Dir.RTL ? 'right' : 'left';
+          dir == goog.i18n.bidi.Dir.RTL ?
+          goog.i18n.bidi.RIGHT : goog.i18n.bidi.LEFT;
       element.dir = dir == goog.i18n.bidi.Dir.RTL ? 'rtl' : 'ltr';
     }
+  }
+};
+
+
+/**
+ * Sets element dir based on estimated directionality of the given text.
+ * @param {!Element} element
+ * @param {string} text
+ */
+goog.i18n.bidi.setElementDirByTextDirectionality = function(element, text) {
+  switch (goog.i18n.bidi.estimateDirection(text)) {
+    case (goog.i18n.bidi.Dir.LTR):
+      element.dir = 'ltr';
+      break;
+    case (goog.i18n.bidi.Dir.RTL):
+      element.dir = 'rtl';
+      break;
+    default:
+      // Default for no direction, inherit from document.
+      element.removeAttribute('dir');
   }
 };
 

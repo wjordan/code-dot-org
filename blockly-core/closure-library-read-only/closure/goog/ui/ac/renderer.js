@@ -25,9 +25,11 @@ goog.require('goog.a11y.aria');
 goog.require('goog.a11y.aria.Role');
 goog.require('goog.a11y.aria.State');
 goog.require('goog.array');
+goog.require('goog.asserts');
 goog.require('goog.dispose');
 goog.require('goog.dom');
 goog.require('goog.dom.NodeType');
+goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventTarget');
@@ -102,14 +104,14 @@ goog.ui.ac.Renderer = function(opt_parentNode, opt_customRenderer,
 
   /**
    * Array used to store the current set of rows being displayed
-   * @type {Array}
+   * @type {Array<!Object>}
    * @private
    */
   this.rows_ = [];
 
   /**
    * Array of the node divs that hold each result that is being displayed.
-   * @type {Array.<Element>}
+   * @type {Array<Element>}
    * @protected
    * @suppress {underscore|visibility}
    */
@@ -257,11 +259,25 @@ goog.ui.ac.Renderer.prototype.anchorElement_;
 
 
 /**
+ * The anchor element to position the rendered autocompleter against.
+ * @protected {Element|undefined}
+ */
+goog.ui.ac.Renderer.prototype.target_;
+
+
+/**
  * The element on which to base the width of the autocomplete.
  * @type {Node}
  * @private
  */
 goog.ui.ac.Renderer.prototype.widthProvider_;
+
+
+/**
+ * A flag used to make sure we highlight only one match in the rendered row.
+ * @private {boolean}
+ */
+goog.ui.ac.Renderer.prototype.wasHighlightedAtLeastOnce_;
 
 
 /**
@@ -401,7 +417,7 @@ goog.ui.ac.Renderer.prototype.getAnchorElement = function() {
 /**
  * Render the autocomplete UI
  *
- * @param {Array} rows Matching UI rows.
+ * @param {Array<!Object>} rows Matching UI rows.
  * @param {string} token Token we are currently matching against.
  * @param {Element=} opt_target Current HTML node, will position popup beneath
  *     this node.
@@ -505,7 +521,7 @@ goog.ui.ac.Renderer.prototype.hiliteRow = function(index) {
     this.hilitedRow_ = index;
     if (rowDiv) {
       goog.dom.classlist.addAll(rowDiv, [this.activeClassName,
-          this.legacyActiveClassName_]);
+        this.legacyActiveClassName_]);
       if (this.target_) {
         goog.a11y.aria.setActiveDescendant(this.target_, rowDiv);
       }
@@ -520,7 +536,8 @@ goog.ui.ac.Renderer.prototype.hiliteRow = function(index) {
  */
 goog.ui.ac.Renderer.prototype.hiliteNone = function() {
   if (this.hilitedRow_ >= 0) {
-    goog.dom.classlist.removeAll(this.rowDivs_[this.hilitedRow_],
+    goog.dom.classlist.removeAll(
+        goog.asserts.assert(this.rowDivs_[this.hilitedRow_]),
         [this.activeClassName, this.legacyActiveClassName_]);
   }
 };
@@ -548,13 +565,14 @@ goog.ui.ac.Renderer.prototype.hiliteId = function(id) {
 /**
  * Sets CSS classes on autocomplete conatainer element.
  *
- * @param {Element} elt The container element.
+ * @param {Element} elem The container element.
  * @private
  */
-goog.ui.ac.Renderer.prototype.setMenuClasses_ = function(elt) {
+goog.ui.ac.Renderer.prototype.setMenuClasses_ = function(elem) {
+  goog.asserts.assert(elem);
   // Legacy clients may set the renderer's className to a space-separated list
   // or even have a trailing space.
-  goog.dom.classlist.addAll(elt, goog.string.trim(this.className).split(' '));
+  goog.dom.classlist.addAll(elem, goog.string.trim(this.className).split(' '));
 };
 
 
@@ -566,7 +584,7 @@ goog.ui.ac.Renderer.prototype.setMenuClasses_ = function(elt) {
 goog.ui.ac.Renderer.prototype.maybeCreateElement_ = function() {
   if (!this.element_) {
     // Make element and add it to the parent
-    var el = this.dom_.createDom('div', {style: 'display:none'});
+    var el = this.dom_.createDom(goog.dom.TagName.DIV, {style: 'display:none'});
     if (this.showScrollbarsIfTooLarge_) {
       // Make sure that the dropdown will get scrollbars if it isn't large
       // enough to show all rows.
@@ -724,7 +742,7 @@ goog.ui.ac.Renderer.prototype.getAutoPosition = function() {
  * @protected
  */
 goog.ui.ac.Renderer.prototype.getTarget = function() {
-  return this.target_;
+  return this.target_ || null;
 };
 
 
@@ -766,25 +784,43 @@ goog.ui.ac.Renderer.prototype.disposeInternal = function() {
  */
 goog.ui.ac.Renderer.prototype.renderRowContents_ =
     function(row, token, node) {
-  node.innerHTML = goog.string.htmlEscape(row.data.toString());
+  goog.dom.setTextContent(node, row.data.toString());
 };
 
 
 /**
  * Goes through a node and all of its child nodes, replacing HTML text that
  * matches a token with <b>token</b>.
+ * The replacement will happen on the first match or all matches depending on
+ * this.highlightAllTokens_ value.
  *
  * @param {Node} node Node to match.
- * @param {string|Array.<string>} tokenOrArray Token to match or array of tokens
+ * @param {string|Array<string>} tokenOrArray Token to match or array of tokens
  *     to match.  By default, only the first match will be highlighted.  If
  *     highlightAllTokens is set, then all tokens appearing at the start of a
  *     word, in whatever order and however many times, will be highlighted.
  * @private
  */
+goog.ui.ac.Renderer.prototype.startHiliteMatchingText_ =
+    function(node, tokenOrArray) {
+  this.wasHighlightedAtLeastOnce_ = false;
+  this.hiliteMatchingText_(node, tokenOrArray);
+};
+
+
+/**
+ * @param {Node} node Node to match.
+ * @param {string|Array<string>} tokenOrArray Token to match or array of tokens
+ *     to match.
+ * @private
+ */
 goog.ui.ac.Renderer.prototype.hiliteMatchingText_ =
     function(node, tokenOrArray) {
-  if (node.nodeType == goog.dom.NodeType.TEXT) {
+  if (!this.highlightAllTokens_ && this.wasHighlightedAtLeastOnce_) {
+    return;
+  }
 
+  if (node.nodeType == goog.dom.NodeType.TEXT) {
     var rest = null;
     if (goog.isArray(tokenOrArray) &&
         tokenOrArray.length > 1 &&
@@ -841,7 +877,7 @@ goog.ui.ac.Renderer.prototype.hiliteMatchingText_ =
         var idx = 2 * i;
 
         node.nodeValue = textNodes[idx];
-        var boldTag = this.dom_.createElement('b');
+        var boldTag = this.dom_.createElement(goog.dom.TagName.B);
         boldTag.className = this.highlightedClassName;
         this.dom_.appendChild(boldTag,
             this.dom_.createTextNode(textNodes[idx + 1]));
@@ -854,6 +890,8 @@ goog.ui.ac.Renderer.prototype.hiliteMatchingText_ =
       // Append the remaining text nodes to the end.
       var remainingTextNodes = goog.array.slice(textNodes, maxNumToBold * 2);
       node.nodeValue = remainingTextNodes.join('');
+
+      this.wasHighlightedAtLeastOnce_ = true;
     } else if (rest) {
       this.hiliteMatchingText_(node, rest);
     }
@@ -871,7 +909,7 @@ goog.ui.ac.Renderer.prototype.hiliteMatchingText_ =
 /**
  * Transforms a token into a string ready to be put into the regular expression
  * in hiliteMatchingText_.
- * @param {string|Array.<string>} tokenOrArray The token or array to get the
+ * @param {string|Array<string>} tokenOrArray The token or array to get the
  *     regex string from.
  * @return {string} The regex-ready token.
  * @private
@@ -886,7 +924,7 @@ goog.ui.ac.Renderer.prototype.getTokenRegExp_ = function(tokenOrArray) {
   if (goog.isArray(tokenOrArray)) {
     // Remove invalid tokens from the array, which may leave us with nothing.
     tokenOrArray = goog.array.filter(tokenOrArray, function(str) {
-      return !goog.string.isEmptySafe(str);
+      return !goog.string.isEmptyOrWhitespace(goog.string.makeSafe(str));
     });
   }
 
@@ -917,7 +955,8 @@ goog.ui.ac.Renderer.prototype.getTokenRegExp_ = function(tokenOrArray) {
       // For the single-match string token, we refuse to match anything if
       // the string begins with a non-word character, as matches by definition
       // can only occur at the start of a word. (This also handles the
-      // goog.string.isEmptySafe(tokenOrArray) case.)
+      // goog.string.isEmptyOrWhitespace(goog.string.makeSafe(tokenOrArray))
+      // case.)
       if (!/^\W/.test(tokenOrArray)) {
         token = goog.string.regExpEscape(tokenOrArray);
       }
@@ -934,11 +973,11 @@ goog.ui.ac.Renderer.prototype.getTokenRegExp_ = function(tokenOrArray) {
  *
  * @param {Object} row Object representing row.
  * @param {string} token Token to highlight.
- * @return {Element} An element with the rendered HTML.
+ * @return {!Element} An element with the rendered HTML.
  */
 goog.ui.ac.Renderer.prototype.renderRowHtml = function(row, token) {
   // Create and return the element.
-  var elem = this.dom_.createDom('div', {
+  var elem = this.dom_.createDom(goog.dom.TagName.DIV, {
     className: this.rowClassName,
     id: goog.ui.IdGenerator.getInstance().getNextUniqueId()
   });
@@ -950,7 +989,7 @@ goog.ui.ac.Renderer.prototype.renderRowHtml = function(row, token) {
   }
 
   if (token && this.useStandardHighlighting_) {
-    this.hiliteMatchingText_(elem, token);
+    this.startHiliteMatchingText_(elem, token);
   }
 
   goog.dom.classlist.add(elem, this.rowClassName);
@@ -1041,13 +1080,18 @@ goog.ui.ac.Renderer.CustomRenderer = function() {
 
 /**
  * Renders the autocomplete box. May be set to null.
+ *
+ * Because of the type, this function cannot be documented with param JSDoc.
+ *
+ * The function expects the following parameters:
+ *
+ * renderer, goog.ui.ac.Renderer: The autocomplete renderer.
+ * element, Element: The main element that controls the rendered autocomplete.
+ * rows, Array: The current set of rows being displayed.
+ * token, string: The current token that has been entered. *
+ *
  * @type {function(goog.ui.ac.Renderer, Element, Array, string)|
  *        null|undefined}
- * param {goog.ui.ac.Renderer} renderer The autocomplete renderer.
- * param {Element} element The main element that controls the rendered
- *     autocomplete.
- * param {Array} rows The current set of rows being displayed.
- * param {string} token The current token that has been entered.
  */
 goog.ui.ac.Renderer.CustomRenderer.prototype.render = function(
     renderer, element, rows, token) {

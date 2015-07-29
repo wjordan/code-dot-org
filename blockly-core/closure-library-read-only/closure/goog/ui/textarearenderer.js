@@ -69,13 +69,13 @@ goog.ui.TextareaRenderer.prototype.decorate = function(control, element) {
  * Returns the textarea's contents wrapped in an HTML textarea element.  Sets
  * the textarea's disabled attribute as needed.
  * @param {goog.ui.Control} textarea Textarea to render.
- * @return {Element} Root element for the Textarea control (an HTML textarea
+ * @return {!Element} Root element for the Textarea control (an HTML textarea
  *     element).
  * @override
  */
 goog.ui.TextareaRenderer.prototype.createDom = function(textarea) {
   this.setUpTextarea_(textarea);
-  var element = textarea.getDomHelper().createDom('textarea', {
+  var element = textarea.getDomHelper().createDom(goog.dom.TagName.TEXTAREA, {
     'class': this.getClassNames(textarea).join(' '),
     'disabled': !textarea.isEnabled()
   }, textarea.getContent() || '');

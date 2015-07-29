@@ -58,6 +58,8 @@ goog.require('goog.structs.Map');
 goog.require('goog.uri.utils');
 goog.require('goog.userAgent');
 
+goog.forwardDeclare('goog.Uri');
+
 
 
 /**
@@ -277,7 +279,7 @@ goog.net.XhrIo.XHR2_ON_TIMEOUT_ = 'ontimeout';
  * All non-disposed instances of goog.net.XhrIo created
  * by {@link goog.net.XhrIo.send} are in this Array.
  * @see goog.net.XhrIo.cleanup
- * @private {!Array.<!goog.net.XhrIo>}
+ * @private {!Array<!goog.net.XhrIo>}
  */
 goog.net.XhrIo.sendInstances_ = [];
 
@@ -287,8 +289,8 @@ goog.net.XhrIo.sendInstances_ = [];
  * request.
  * @see goog.net.XhrIo.cleanup
  * @param {string|goog.Uri} url Uri to make request to.
- * @param {Function=} opt_callback Callback function for when request is
- *     complete.
+ * @param {?function(this:goog.net.XhrIo, ?)=} opt_callback Callback function
+ *     for when request is complete.
  * @param {string=} opt_method Send method, default: GET.
  * @param {ArrayBuffer|ArrayBufferView|Blob|Document|FormData|string=}
  *     opt_content Body data.
@@ -298,6 +300,7 @@ goog.net.XhrIo.sendInstances_ = [];
  *     incomplete request will be aborted; 0 means no timeout is set.
  * @param {boolean=} opt_withCredentials Whether to send credentials with the
  *     request. Default to false. See {@link goog.net.XhrIo#setWithCredentials}.
+ * @return {!goog.net.XhrIo} The sent XhrIo.
  */
 goog.net.XhrIo.send = function(url, opt_callback, opt_method, opt_content,
                                opt_headers, opt_timeoutInterval,
@@ -315,6 +318,7 @@ goog.net.XhrIo.send = function(url, opt_callback, opt_method, opt_content,
     x.setWithCredentials(opt_withCredentials);
   }
   x.send(url, opt_method, opt_content, opt_headers);
+  return x;
 };
 
 
@@ -520,7 +524,7 @@ goog.net.XhrIo.prototype.send = function(url, opt_method, opt_content,
   }
 
   // Add the headers to the Xhr object
-  goog.structs.forEach(headers, function(value, key) {
+  headers.forEach(function(value, key) {
     this.xhr_.setRequestHeader(key, value);
   }, this);
 
@@ -1154,14 +1158,14 @@ goog.net.XhrIo.prototype.getAllResponseHeaders = function() {
  * include any case normalization logic, it will just return a key-value
  * representation of the headers.
  * See: http://www.w3.org/TR/XMLHttpRequest/#the-getresponseheader()-method
- * @return {!Object.<string, string>} An object with the header keys as keys
+ * @return {!Object<string, string>} An object with the header keys as keys
  *     and header values as values.
  */
 goog.net.XhrIo.prototype.getResponseHeaders = function() {
   var headersObject = {};
   var headersArray = this.getAllResponseHeaders().split('\r\n');
   for (var i = 0; i < headersArray.length; i++) {
-    if (goog.string.isEmpty(headersArray[i])) {
+    if (goog.string.isEmptyOrWhitespace(headersArray[i])) {
       continue;
     }
     var keyValue = goog.string.splitLimit(headersArray[i], ': ', 2);

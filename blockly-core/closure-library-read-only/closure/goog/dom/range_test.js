@@ -282,42 +282,48 @@ function testRemoveContents() {
 
 function testRemovePartialContents() {
   var outer = goog.dom.getElement('removePartialTest');
+  var originalText = goog.dom.getTextContent(outer);
 
-  var range = goog.dom.Range.createFromNodes(outer.firstChild, 2,
-      outer.firstChild, 4);
-  removeHelper(1, range, outer, 1, '0145');
+  try {
+    var range = goog.dom.Range.createFromNodes(outer.firstChild, 2,
+        outer.firstChild, 4);
+    removeHelper(1, range, outer, 1, '0145');
 
-  range = goog.dom.Range.createFromNodes(outer.firstChild, 0,
-      outer.firstChild, 1);
-  removeHelper(2, range, outer, 1, '145');
+    range = goog.dom.Range.createFromNodes(outer.firstChild, 0,
+        outer.firstChild, 1);
+    removeHelper(2, range, outer, 1, '145');
 
-  range = goog.dom.Range.createFromNodes(outer.firstChild, 2,
-      outer.firstChild, 3);
-  removeHelper(3, range, outer, 1, '14');
+    range = goog.dom.Range.createFromNodes(outer.firstChild, 2,
+        outer.firstChild, 3);
+    removeHelper(3, range, outer, 1, '14');
 
-  var br = goog.dom.createDom('BR');
-  outer.appendChild(br);
-  range = goog.dom.Range.createFromNodes(outer.firstChild, 1,
-      outer, 1);
-  removeHelper(4, range, outer, 2, '1<br>');
+    var br = goog.dom.createDom(goog.dom.TagName.BR);
+    outer.appendChild(br);
+    range = goog.dom.Range.createFromNodes(outer.firstChild, 1,
+        outer, 1);
+    removeHelper(4, range, outer, 2, '1<br>');
 
-  outer.innerHTML = '<br>123';
-  range = goog.dom.Range.createFromNodes(outer, 0, outer.lastChild, 2);
-  removeHelper(5, range, outer, 1, '3');
+    outer.innerHTML = '<br>123';
+    range = goog.dom.Range.createFromNodes(outer, 0, outer.lastChild, 2);
+    removeHelper(5, range, outer, 1, '3');
 
-  outer.innerHTML = '123<br>456';
-  range = goog.dom.Range.createFromNodes(outer.firstChild, 1, outer.lastChild,
-      2);
-  removeHelper(6, range, outer, 2, '16');
+    outer.innerHTML = '123<br>456';
+    range = goog.dom.Range.createFromNodes(outer.firstChild, 1, outer.lastChild,
+        2);
+    removeHelper(6, range, outer, 2, '16');
 
-  outer.innerHTML = '123<br>456';
-  range = goog.dom.Range.createFromNodes(outer.firstChild, 0, outer.lastChild,
-      2);
-  removeHelper(7, range, outer, 1, '6');
+    outer.innerHTML = '123<br>456';
+    range = goog.dom.Range.createFromNodes(outer.firstChild, 0, outer.lastChild,
+        2);
+    removeHelper(7, range, outer, 1, '6');
 
-  outer.innerHTML = '<div></div>';
-  range = goog.dom.Range.createFromNodeContents(outer.firstChild);
-  removeHelper(8, range, outer, 1, '<div></div>');
+    outer.innerHTML = '<div></div>';
+    range = goog.dom.Range.createFromNodeContents(outer.firstChild);
+    removeHelper(8, range, outer, 1, '<div></div>');
+  } finally {
+    // Restore the original text state for repeated runs.
+    goog.dom.setTextContent(outer, originalText);
+  }
 
   // TODO(robbyw): Fix the following edge cases:
   //    * Selecting contents of a node containing multiply empty divs
@@ -377,8 +383,8 @@ function assertSurroundDoesntChangeSelectionWithOffsets(
 
   var rangeToSurround = goog.dom.Range.createFromNodes(
       div.firstChild, offset1, div.firstChild, offset2);
-  rangeToSurround.surroundWithNodes(goog.dom.createDom('span'),
-      goog.dom.createDom('span'));
+  rangeToSurround.surroundWithNodes(goog.dom.createDom(goog.dom.TagName.SPAN),
+      goog.dom.createDom(goog.dom.TagName.SPAN));
 
   // Make sure that the selection didn't change.
   assertHTMLEquals('Selection must not change when contents are surrounded.',
@@ -632,7 +638,7 @@ function testRangeBeforeBreak() {
   var range = goog.dom.Range.createFromWindow();
   assertFalse('Should not contain whole <br>',
       range.containsNode(br, false));
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isDocumentModeOrHigher(9)) {
     assertTrue('Range over <br> is adjacent to the immediate range before it',
         range.containsNode(br, true));
   } else {
@@ -657,7 +663,8 @@ function testRangeAfterBreak() {
   var isSafari3 =
       goog.userAgent.WEBKIT && !goog.userAgent.isVersionOrHigher('528');
 
-  if (goog.userAgent.IE || isSafari3) {
+  if (goog.userAgent.IE && !goog.userAgent.isDocumentModeOrHigher(9) ||
+      isSafari3) {
     assertTrue('Range over <br> is adjacent to the immediate range after it',
         range.containsNode(br, true));
   } else {
@@ -695,7 +702,7 @@ function testFocusedElementDisappears() {
   // created, contentEditable is set, is focused, and removed.  After that
   // happens, calling selection.collapse fails.
   // https://bugzilla.mozilla.org/show_bug.cgi?id=773137
-  var disappearingElement = goog.dom.createDom('div');
+  var disappearingElement = goog.dom.createDom(goog.dom.TagName.DIV);
   document.body.appendChild(disappearingElement);
   disappearingElement.contentEditable = true;
   disappearingElement.focus();

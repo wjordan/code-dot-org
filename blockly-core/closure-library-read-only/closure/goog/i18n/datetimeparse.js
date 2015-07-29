@@ -470,7 +470,7 @@ goog.i18n.DateTimeParse.prototype.markAbutStart_ = function() {
  * Skip space in the string.
  *
  * @param {string} text input string.
- * @param {Array.<number>} pos where skip start, and return back where the skip
+ * @param {Array<number>} pos where skip start, and return back where the skip
  *     stops.
  * @private
  */
@@ -487,7 +487,7 @@ goog.i18n.DateTimeParse.prototype.skipSpace_ = function(text, pos) {
  * numeric field value.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {Object} part the pattern part for this field.
  * @param {number} digitCount when > 0, numeric parsing must obey the count.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object that holds parsed value.
@@ -518,7 +518,10 @@ goog.i18n.DateTimeParse.prototype.subParse_ =
 
   switch (ch) {
     case 'G': // ERA
-      cal.era = this.matchString_(text, pos, goog.i18n.DateTimeSymbols.ERAS);
+      value = this.matchString_(text, pos, goog.i18n.DateTimeSymbols.ERAS);
+      if (value >= 0) {
+        cal.era = value;
+      }
       return true;
     case 'M': // MONTH
     case 'L': // STANDALONEMONTH
@@ -526,14 +529,19 @@ goog.i18n.DateTimeParse.prototype.subParse_ =
     case 'E':
       return this.subParseDayOfWeek_(text, pos, cal);
     case 'a': // AM_PM
-      cal.ampm = this.matchString_(text, pos, goog.i18n.DateTimeSymbols.AMPMS);
+      value = this.matchString_(text, pos, goog.i18n.DateTimeSymbols.AMPMS);
+      if (value >= 0) {
+        cal.ampm = value;
+      }
       return true;
     case 'y': // YEAR
       return this.subParseYear_(text, pos, start, value, part, cal);
     case 'Q': // QUARTER
       return this.subParseQuarter_(text, pos, cal, value);
     case 'd': // DATE
-      cal.day = value;
+      if (value >= 0) {
+        cal.day = value;
+      }
       return true;
     case 'S': // FRACTIONAL_SECOND
       return this.subParseFractionalSeconds_(value, pos, start, cal);
@@ -544,13 +552,19 @@ goog.i18n.DateTimeParse.prototype.subParse_ =
     case 'K': // HOUR (0..11)
     case 'H': // HOUR_OF_DAY (0..23)
     case 'k': // HOUR_OF_DAY (1..24)
-      cal.hours = value;
+      if (value >= 0) {
+        cal.hours = value;
+      }
       return true;
     case 'm': // MINUTE
-      cal.minutes = value;
+      if (value >= 0) {
+        cal.minutes = value;
+      }
       return true;
     case 's': // SECOND
-      cal.seconds = value;
+      if (value >= 0) {
+        cal.seconds = value;
+      }
       return true;
 
     case 'z': // ZONE_OFFSET
@@ -570,7 +584,7 @@ goog.i18n.DateTimeParse.prototype.subParse_ =
  * 3) year field participate in abut processing.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {number} start where this field start.
  * @param {number} value integer value of year.
  * @param {Object} part the pattern part for this field.
@@ -612,7 +626,7 @@ goog.i18n.DateTimeParse.prototype.subParseYear_ =
  * Parse Month field.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  * @param {number} value numeric value if this field is expressed using
  *      numeric pattern, or -1 if not.
@@ -649,7 +663,7 @@ goog.i18n.DateTimeParse.prototype.subParseMonth_ =
  * Parse Quarter field.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  * @param {number} value numeric value if this field is expressed using
  *      numeric pattern, or -1 if not.
@@ -682,7 +696,7 @@ goog.i18n.DateTimeParse.prototype.subParseQuarter_ =
 /**
  * Parse Day of week field.
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  *
  * @return {boolean} True if successful.
@@ -709,7 +723,7 @@ goog.i18n.DateTimeParse.prototype.subParseDayOfWeek_ =
  * Parse fractional seconds field.
  *
  * @param {number} value parsed numeric value.
- * @param {Array.<number>} pos current parse position.
+ * @param {Array<number>} pos current parse position.
  * @param {number} start where this field start.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  *
@@ -730,7 +744,7 @@ goog.i18n.DateTimeParse.prototype.subParseFractionalSeconds_ =
  * Parse GMT type timezone.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  *
  * @return {boolean} True if successful.
@@ -770,7 +784,7 @@ goog.i18n.DateTimeParse.prototype.subparseTimeZoneInGMT_ =
  * Parse time zone offset.
  *
  * @param {string} text the time text to be parsed.
- * @param {Array.<number>} pos Parse position.
+ * @param {Array<number>} pos Parse position.
  * @param {goog.i18n.DateTimeParse.MyDate_} cal object to hold parsed value.
  *
  * @return {boolean} True if successful.
@@ -792,7 +806,7 @@ goog.i18n.DateTimeParse.prototype.parseTimeZoneOffset_ =
   // Look for hours:minutes or hhmm.
   var st = pos[0];
   var value = this.parseInt_(text, pos);
-  if (value == 0 && pos[0] == st) {
+  if (value < 0) {
     return false;
   }
 
@@ -801,9 +815,8 @@ goog.i18n.DateTimeParse.prototype.parseTimeZoneOffset_ =
     // This is the hours:minutes case
     offset = value * 60;
     pos[0]++;
-    st = pos[0];
     value = this.parseInt_(text, pos);
-    if (value == 0 && pos[0] == st) {
+    if (value < 0) {
       return false;
     }
     offset += value;
@@ -826,12 +839,13 @@ goog.i18n.DateTimeParse.prototype.parseTimeZoneOffset_ =
 
 
 /**
- * Parse a integer string and return integer value.
+ * Parse an integer string and return integer value.
  *
  * @param {string} text string being parsed.
- * @param {Array.<number>} pos parse position.
+ * @param {Array<number>} pos parse position.
  *
- * @return {number} Converted integer value.
+ * @return {number} Converted integer value or -1 if the integer cannot be
+ *     parsed.
  * @private
  */
 goog.i18n.DateTimeParse.prototype.parseInt_ = function(text, pos) {
@@ -867,8 +881,8 @@ goog.i18n.DateTimeParse.prototype.parseInt_ = function(text, pos) {
  * longest match is returned.
  *
  * @param {string} text The string to match to.
- * @param {Array.<number>} pos parsing position.
- * @param {Array.<string>} data The string array of matching patterns.
+ * @param {Array<number>} pos parsing position.
+ * @param {Array<string>} data The string array of matching patterns.
  *
  * @return {number} the new start position if matching succeeded; a negative
  *     number indicating matching failure.

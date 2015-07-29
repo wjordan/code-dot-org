@@ -16,7 +16,6 @@
  * @fileoverview Renderer for {@link goog.ui.Menu}s.
  *
  * @author robbyw@google.com (Robby Walker)
- * @author pupius@google.com (Daniel Pupius)
  */
 
 goog.provide('goog.ui.MenuRenderer');
@@ -26,6 +25,7 @@ goog.require('goog.a11y.aria.Role');
 goog.require('goog.a11y.aria.State');
 goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.ui.ContainerRenderer');
 goog.require('goog.ui.Separator');
 
@@ -61,7 +61,7 @@ goog.ui.MenuRenderer.CSS_CLASS = goog.getCssName('goog-menu');
  * @override
  */
 goog.ui.MenuRenderer.prototype.canDecorate = function(element) {
-  return element.tagName == 'UL' ||
+  return element.tagName == goog.dom.TagName.UL ||
       goog.ui.MenuRenderer.superClass_.canDecorate.call(this, element);
 };
 
@@ -76,7 +76,7 @@ goog.ui.MenuRenderer.prototype.canDecorate = function(element) {
  * @override
  */
 goog.ui.MenuRenderer.prototype.getDecoratorForChild = function(element) {
-  return element.tagName == 'HR' ?
+  return element.tagName == goog.dom.TagName.HR ?
       new goog.ui.Separator() :
       goog.ui.MenuRenderer.superClass_.getDecoratorForChild.call(this,
           element);

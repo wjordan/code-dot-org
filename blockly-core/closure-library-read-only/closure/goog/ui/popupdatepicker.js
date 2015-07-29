@@ -49,6 +49,7 @@ goog.ui.PopupDatePicker = function(opt_datePicker, opt_domHelper) {
   this.datePicker_ = opt_datePicker || new goog.ui.DatePicker();
 };
 goog.inherits(goog.ui.PopupDatePicker, goog.ui.Component);
+goog.tagUnsealableClass(goog.ui.PopupDatePicker);
 
 
 /**
@@ -223,8 +224,10 @@ goog.ui.PopupDatePicker.prototype.getAllowAutoFocus = function() {
  * Show the popup at the bottom-left corner of the specified element.
  * @param {Element} element Reference element for displaying the popup -- popup
  *     will appear at the bottom-left corner of this element.
+ * @param {boolean=} opt_keepDate Whether to keep the date picker's current
+ *     date. If false, the date is set to null. Defaults to false.
  */
-goog.ui.PopupDatePicker.prototype.showPopup = function(element) {
+goog.ui.PopupDatePicker.prototype.showPopup = function(element, opt_keepDate) {
   this.lastTarget_ = element;
   this.popup_.setPosition(new goog.positioning.AnchoredPosition(
       element,
@@ -236,7 +239,10 @@ goog.ui.PopupDatePicker.prototype.showPopup = function(element) {
   // have to worry about change events when we call setDate().
   this.getHandler().unlisten(this.datePicker_, goog.ui.DatePicker.Events.CHANGE,
                              this.onDateChanged_);
-  this.datePicker_.setDate(null);
+  var keepDate = !!opt_keepDate;
+  if (!keepDate) {
+    this.datePicker_.setDate(null);
+  }
 
   // Forward the change event onto our listeners.  Done before we start
   // listening to date changes again, so that listeners can change the date

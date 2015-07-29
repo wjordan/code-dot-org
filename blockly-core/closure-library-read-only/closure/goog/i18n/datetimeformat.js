@@ -144,7 +144,7 @@ goog.i18n.DateTimeFormat.Format = {
 
 /**
  * regular expression pattern for parsing pattern string
- * @type {Array.<RegExp>}
+ * @type {Array<RegExp>}
  * @private
  */
 goog.i18n.DateTimeFormat.TOKENS_ = [
@@ -175,6 +175,10 @@ goog.i18n.DateTimeFormat.PartTypes_ = {
  * @private
  */
 goog.i18n.DateTimeFormat.prototype.applyPattern_ = function(pattern) {
+  if (goog.i18n.DateTimeFormat.removeRlmInPatterns_) {
+    // Remove RLM unicode control character from pattern.
+    pattern = pattern.replace(/\u200f/g, '');
+  }
   // lex the pattern, once for all uses
   while (pattern) {
     for (var i = 0; i < goog.i18n.DateTimeFormat.TOKENS_.length; ++i) {
@@ -199,7 +203,7 @@ goog.i18n.DateTimeFormat.prototype.applyPattern_ = function(pattern) {
 
 
 /**
- * Format the given date object according to preset pattern and current lcoale.
+ * Format the given date object according to preset pattern and current locale.
  * @param {goog.date.DateLike} date The Date object that is being formatted.
  * @param {goog.i18n.TimeZone=} opt_timeZone optional, if specified, time
  *    related fields will be formatted based on its setting. When this field
@@ -223,7 +227,7 @@ goog.i18n.DateTimeFormat.prototype.format = function(date, opt_timeZone) {
   // Thing get a little bit tricky when daylight time transition happens. For
   // example, suppose OS timeZone is America/Los_Angeles, it is impossible to
   // represent "2006/4/2 02:30" even for those timeZone that has no transition
-  // at this time. Because 2:00 to 3:00 on that day does not exising in
+  // at this time. Because 2:00 to 3:00 on that day does not exist in
   // America/Los_Angeles time zone. To avoid calculating date field through
   // our own code, we uses 3 Date object instead, one for "Year, month, day",
   // one for time within that day, and one for timeZone object since it need
@@ -232,11 +236,24 @@ goog.i18n.DateTimeFormat.prototype.format = function(date, opt_timeZone) {
       (date.getTimezoneOffset() - opt_timeZone.getOffset(date)) * 60000 : 0;
   var dateForDate = diff ? new Date(date.getTime() + diff) : date;
   var dateForTime = dateForDate;
-  // in daylight time switch on/off hour, diff adjustment could alter time
-  // because of timeZone offset change, move 1 day forward or backward.
+  // When the time manipulation applied above spans the DST on/off hour, this
+  // could alter the time incorrectly by adding or subtracting an additional
+  // hour.
+  // We can mitigate this by:
+  // - Adding the difference in timezone offset to the date. This ensures that
+  //   the dateForDate is still within the right day if the extra DST hour
+  //   affected the date.
+  // - Move the time one day forward if we applied a timezone offset backwards,
+  //   or vice versa. This trick ensures that the time is in the same offset
+  //   as the original date, so we remove the additional hour added or
+  //   subtracted by the DST switch.
   if (opt_timeZone &&
       dateForDate.getTimezoneOffset() != date.getTimezoneOffset()) {
-    diff += diff > 0 ? -24 * 60 * 60000 : 24 * 60 * 60000;
+    var dstDiff = (dateForDate.getTimezoneOffset() - date.getTimezoneOffset()) *
+        60000;
+    dateForDate = new Date(dateForDate.getTime() + dstDiff);
+
+    diff += diff > 0 ? -goog.date.MS_PER_DAY : goog.date.MS_PER_DAY;
     dateForTime = new Date(date.getTime() + diff);
   }
 
@@ -285,21 +302,81 @@ goog.i18n.DateTimeFormat.prototype.applyStandardPattern_ =
 /**
  * Localizes a string potentially containing numbers, replacing ASCII digits
  * with native digits if specified so by the locale. Leaves other characters.
- *
- * Although this is not private anymore, is should not be used.
- * We needed to make it public so that we can use it in goog.date.relative.
- * But when CLDR gets better support for relative dates, this will be
- * refactored and will become private again.
- *
  * @param {string} input the string to be localized, using ASCII digits.
  * @return {string} localized string, potentially using native digits.
+ * @private
  */
-goog.i18n.DateTimeFormat.prototype.localizeNumbers = function(input) {
-  // TODO(user): fix date/duration.js and date/relative.js.
-  // They call goog.i18n.DateTimeFormat.prototype.localizeNumbers directly,
-  // without calling a constructor.
-  if (this.dateTimeSymbols_ === undefined ||
-      this.dateTimeSymbols_.ZERODIGIT === undefined) {
+goog.i18n.DateTimeFormat.prototype.localizeNumbers_ = function(input) {
+  return goog.i18n.DateTimeFormat.localizeNumbers(input, this.dateTimeSymbols_);
+};
+
+
+/**
+ * If the usage of Ascii digits should be enforced regardless of locale.
+ * @type {boolean}
+ * @private
+ */
+goog.i18n.DateTimeFormat.enforceAsciiDigits_ = false;
+
+
+/**
+ * If RLM unicode characters should be removed from date/time patterns (useful
+ * when enforcing ASCII digits for Arabic). See {@code #setEnforceAsciiDigits}.
+ * @type {boolean}
+ * @private
+ */
+goog.i18n.DateTimeFormat.removeRlmInPatterns_ = false;
+
+
+/**
+ * Sets if the usage of Ascii digits in formatting should be enforced in
+ * formatted date/time even for locales where native digits are indicated.
+ * Also sets whether to remove RLM unicode control characters when using
+ * standard enumerated patterns (they exist e.g. in standard d/M/y for Arabic).
+ * Production code should call this once before any {@code DateTimeFormat}
+ * object is instantiated.
+ * Caveats:
+ *    * Enforcing ASCII digits affects all future formatting by new or existing
+ * {@code DateTimeFormat} objects.
+ *    * Removal of RLM characters only applies to {@code DateTimeFormat} objects
+ * instantiated after this call.
+ * @param {boolean} enforceAsciiDigits Whether Ascii digits should be enforced.
+ */
+goog.i18n.DateTimeFormat.setEnforceAsciiDigits = function(
+    enforceAsciiDigits) {
+  goog.i18n.DateTimeFormat.enforceAsciiDigits_ = enforceAsciiDigits;
+
+  // Also setting removal of RLM chracters when forcing ASCII digits since it's
+  // the right thing to do for Arabic standard patterns. One could add an
+  // optional argument here or to the {@code DateTimeFormat} constructor to
+  // enable an alternative behavior.
+  goog.i18n.DateTimeFormat.removeRlmInPatterns_ = enforceAsciiDigits;
+};
+
+
+/**
+ * @return {boolean} Whether enforcing ASCII digits for all locales. See
+ *     {@code #setEnforceAsciiDigits} for more details.
+ */
+goog.i18n.DateTimeFormat.isEnforceAsciiDigits = function() {
+  return goog.i18n.DateTimeFormat.enforceAsciiDigits_;
+};
+
+
+/**
+ * Localizes a string potentially containing numbers, replacing ASCII digits
+ * with native digits if specified so by the locale. Leaves other characters.
+ * @param {number|string} input the string to be localized, using ASCII digits.
+ * @param {!Object=} opt_dateTimeSymbols Optional symbols to use use rather than
+ *     the global symbols.
+ * @return {string} localized string, potentially using native digits.
+ */
+goog.i18n.DateTimeFormat.localizeNumbers =
+    function(input, opt_dateTimeSymbols) {
+  input = String(input);
+  var dateTimeSymbols = opt_dateTimeSymbols || goog.i18n.DateTimeSymbols;
+  if (dateTimeSymbols.ZERODIGIT === undefined ||
+      goog.i18n.DateTimeFormat.enforceAsciiDigits_) {
     return input;
   }
 
@@ -307,7 +384,7 @@ goog.i18n.DateTimeFormat.prototype.localizeNumbers = function(input) {
   for (var i = 0; i < input.length; i++) {
     var c = input.charCodeAt(i);
     parts.push((0x30 <= c && c <= 0x39) ? // '0' <= c <= '9'
-        String.fromCharCode(this.dateTimeSymbols_.ZERODIGIT + c - 0x30) :
+        String.fromCharCode(dateTimeSymbols.ZERODIGIT + c - 0x30) :
         input.charAt(i));
   }
   return parts.join('');
@@ -355,7 +432,7 @@ goog.i18n.DateTimeFormat.prototype.formatYear_ = function(count, date) {
     // http://www.unicode.org/reports/tr35/tr35-dates.html
     value = value % 100;
   }
-  return this.localizeNumbers(goog.string.padNumber(value, count));
+  return this.localizeNumbers_(goog.string.padNumber(value, count));
 };
 
 
@@ -375,7 +452,7 @@ goog.i18n.DateTimeFormat.prototype.formatMonth_ = function(count, date) {
     case 4: return this.dateTimeSymbols_.MONTHS[value];
     case 3: return this.dateTimeSymbols_.SHORTMONTHS[value];
     default:
-      return this.localizeNumbers(goog.string.padNumber(value + 1, count));
+      return this.localizeNumbers_(goog.string.padNumber(value + 1, count));
   }
 };
 
@@ -411,7 +488,7 @@ goog.i18n.DateTimeFormat.validateDateHasTime_ = function(date) {
 goog.i18n.DateTimeFormat.prototype.format24Hours_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(
+  return this.localizeNumbers_(
       goog.string.padNumber(date.getHours() || 24, count));
 };
 
@@ -431,7 +508,7 @@ goog.i18n.DateTimeFormat.prototype.formatFractionalSeconds_ =
     function(count, date) {
   // Fractional seconds left-justify, append 0 for precision beyond 3
   var value = date.getTime() % 1000 / 1000;
-  return this.localizeNumbers(
+  return this.localizeNumbers_(
       value.toFixed(Math.min(3, count)).substr(2) +
       (count > 3 ? goog.string.padNumber(0, count - 3) : ''));
 };
@@ -482,7 +559,7 @@ goog.i18n.DateTimeFormat.prototype.formatAmPm_ = function(count, date) {
 goog.i18n.DateTimeFormat.prototype.format1To12Hours_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(
+  return this.localizeNumbers_(
       goog.string.padNumber(date.getHours() % 12 || 12, count));
 };
 
@@ -499,7 +576,7 @@ goog.i18n.DateTimeFormat.prototype.format1To12Hours_ =
 goog.i18n.DateTimeFormat.prototype.format0To11Hours_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(
+  return this.localizeNumbers_(
       goog.string.padNumber(date.getHours() % 12, count));
 };
 
@@ -516,7 +593,7 @@ goog.i18n.DateTimeFormat.prototype.format0To11Hours_ =
 goog.i18n.DateTimeFormat.prototype.format0To23Hours_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(goog.string.padNumber(date.getHours(), count));
+  return this.localizeNumbers_(goog.string.padNumber(date.getHours(), count));
 };
 
 
@@ -540,7 +617,7 @@ goog.i18n.DateTimeFormat.prototype.formatStandaloneDay_ =
     case 3:
       return this.dateTimeSymbols_.STANDALONESHORTWEEKDAYS[value];
     default:
-      return this.localizeNumbers(goog.string.padNumber(value, 1));
+      return this.localizeNumbers_(goog.string.padNumber(value, 1));
   }
 };
 
@@ -565,7 +642,7 @@ goog.i18n.DateTimeFormat.prototype.formatStandaloneMonth_ =
     case 3:
       return this.dateTimeSymbols_.STANDALONESHORTMONTHS[value];
     default:
-      return this.localizeNumbers(goog.string.padNumber(value + 1, count));
+      return this.localizeNumbers_(goog.string.padNumber(value + 1, count));
   }
 };
 
@@ -597,7 +674,7 @@ goog.i18n.DateTimeFormat.prototype.formatQuarter_ =
  * @private
  */
 goog.i18n.DateTimeFormat.prototype.formatDate_ = function(count, date) {
-  return this.localizeNumbers(goog.string.padNumber(date.getDate(), count));
+  return this.localizeNumbers_(goog.string.padNumber(date.getDate(), count));
 };
 
 
@@ -613,7 +690,7 @@ goog.i18n.DateTimeFormat.prototype.formatDate_ = function(count, date) {
 goog.i18n.DateTimeFormat.prototype.formatMinutes_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(goog.string.padNumber(date.getMinutes(), count));
+  return this.localizeNumbers_(goog.string.padNumber(date.getMinutes(), count));
 };
 
 
@@ -629,7 +706,7 @@ goog.i18n.DateTimeFormat.prototype.formatMinutes_ =
 goog.i18n.DateTimeFormat.prototype.formatSeconds_ =
     function(count, date) {
   goog.i18n.DateTimeFormat.validateDateHasTime_(date);
-  return this.localizeNumbers(goog.string.padNumber(date.getSeconds(), count));
+  return this.localizeNumbers_(goog.string.padNumber(date.getSeconds(), count));
 };
 
 
@@ -650,7 +727,7 @@ goog.i18n.DateTimeFormat.prototype.formatWeekOfYear_ = function(count, date) {
       this.dateTimeSymbols_.FIRSTWEEKCUTOFFDAY,
       this.dateTimeSymbols_.FIRSTDAYOFWEEK);
 
-  return this.localizeNumbers(goog.string.padNumber(weekNum, count));
+  return this.localizeNumbers_(goog.string.padNumber(weekNum, count));
 };
 
 
@@ -672,7 +749,7 @@ goog.i18n.DateTimeFormat.prototype.formatTimeZoneRFC_ =
   // RFC 822 formats should be kept in ASCII, but localized GMT formats may need
   // to use native digits.
   return count < 4 ? opt_timeZone.getRFCTimeZoneString(date) :
-                     this.localizeNumbers(opt_timeZone.getGMTString(date));
+                     this.localizeNumbers_(opt_timeZone.getGMTString(date));
 };
 
 

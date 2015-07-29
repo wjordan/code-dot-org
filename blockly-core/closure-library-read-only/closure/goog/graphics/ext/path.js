@@ -23,7 +23,6 @@ goog.provide('goog.graphics.ext.Path');
 
 goog.require('goog.graphics.AffineTransform');
 goog.require('goog.graphics.Path');
-goog.require('goog.math');
 goog.require('goog.math.Rect');
 
 
@@ -89,7 +88,7 @@ goog.graphics.ext.Path.prototype.transform = function(tx) {
  *     by this number.
  * @param {number} yFactor After translation, all y coordinates are multiplied
  *     by this number.
- * @return {goog.graphics.ext.Path} The path itself.
+ * @return {!goog.graphics.ext.Path} The path itself.
  */
 goog.graphics.ext.Path.prototype.modifyBounds = function(deltaX, deltaY,
     xFactor, yFactor) {

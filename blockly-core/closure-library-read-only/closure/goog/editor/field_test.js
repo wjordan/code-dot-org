@@ -18,21 +18,24 @@
  * (such as via usesIframe()) it's important to re-run a lot of the same tests.
  *
  * @author nicksantos@google.com (Nick Santos)
- * @author jparent@google.com (Julie Parent)
  * @author gboyer@google.com (Garrett Boyer)
  */
 
 /** @suppress {extraProvide} */
 goog.provide('goog.editor.field_test');
 
+goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.Range');
+goog.require('goog.dom.TagName');
+goog.require('goog.dom.classlist');
 goog.require('goog.editor.BrowserFeature');
 goog.require('goog.editor.Field');
 goog.require('goog.editor.Plugin');
 goog.require('goog.editor.range');
 goog.require('goog.events');
 goog.require('goog.events.BrowserEvent');
+goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.functions');
 goog.require('goog.testing.LooseMock');
@@ -225,6 +228,47 @@ function getBrowserEvent() {
 
 
 /**
+ * @param {boolean} followLinkInNewWindow Whether activating a hyperlink
+ *     in the editable field will open a new window or not.
+ * @return {!goog.editor.Field} Returns an editable field after its load phase.
+ */
+function createEditableFieldWithListeners(followLinkInNewWindow) {
+  var editableField = new FieldConstructor('testField');
+  editableField.setFollowLinkInNewWindow(followLinkInNewWindow);
+
+  var originalElement = editableField.getOriginalElement();
+  editableField.setupFieldObject(originalElement);
+  editableField.handleFieldLoad();
+
+  return editableField;
+}
+
+function getListenerTarget(editableField) {
+  var elt = editableField.getElement();
+  var listenerTarget =
+      goog.editor.BrowserFeature.USE_DOCUMENT_FOR_KEY_EVENTS &&
+          editableField.usesIframe() ? elt.ownerDocument : elt;
+  return listenerTarget;
+}
+
+function assertClickDefaultActionIsCanceled(editableField) {
+  var cancelClickDefaultActionListener = goog.events.getListener(
+      getListenerTarget(editableField), goog.events.EventType.CLICK,
+      goog.editor.Field.cancelLinkClick_, undefined, editableField);
+
+  assertNotNull(cancelClickDefaultActionListener);
+}
+
+function assertClickDefaultActionIsNotCanceled(editableField) {
+  var cancelClickDefaultActionListener = goog.events.getListener(
+      getListenerTarget(editableField), goog.events.EventType.CLICK,
+      goog.editor.Field.cancelLinkClick_, undefined, editableField);
+
+  assertNull(cancelClickDefaultActionListener);
+}
+
+
+/**
  * Tests that plugins are disabled when the field is made uneditable.
  */
 
@@ -246,6 +290,36 @@ function testMakeUneditableDisablesPlugins() {
   editableField.makeUneditable();
 
   assertEquals(1, calls);
+
+  editableField.dispose();
+}
+
+
+/**
+ * Test that if a browser open a new page when clicking a link in a content
+ * editable element, a click listener is set to cancel this default action.
+ */
+function testClickDefaultActionIsCanceledWhenBrowserFollowsClick() {
+  // Simulate a browser that will open a new page when activating a link in a
+  // content editable element.
+  var editableField =
+      createEditableFieldWithListeners(true /* followLinkInNewWindow */);
+  assertClickDefaultActionIsCanceled(editableField);
+
+  editableField.dispose();
+}
+
+
+/**
+ * Test that if a browser does not open a new page when clicking a link in a
+ * content editable element, the click default action is not canceled.
+ */
+function testClickDefaultActionIsNotCanceledWhenBrowserDontFollowsClick() {
+  // Simulate a browser that will NOT open a new page when activating a link in
+  // a content editable element.
+  var editableField =
+      createEditableFieldWithListeners(false /* followLinkInNewWindow */);
+  assertClickDefaultActionIsNotCanceled(editableField);
 
   editableField.dispose();
 }
@@ -790,15 +864,22 @@ function testNotHandledSelectionChange() {
 function testSelectionChange() {
   var editableField = new FieldConstructor('testField', document);
   var clock = new goog.testing.MockClock(true);
+  var beforeSelectionChanges = goog.testing.recordFunction();
+  goog.events.listen(editableField,
+      goog.editor.Field.EventType.BEFORESELECTIONCHANGE,
+      beforeSelectionChanges);
   var selectionChanges = goog.testing.recordFunction();
   goog.events.listen(editableField, goog.editor.Field.EventType.SELECTIONCHANGE,
       selectionChanges);
 
   editableField.makeEditable();
 
-  // Emulate pressing left arrow key, this should result in SELECTIONCHANGE
-  // event after a short timeout.
+  // Emulate pressing left arrow key, this should result in a
+  // BEFORESELECTIONCHANGE event immediately, and a SELECTIONCHANGE event after
+  // a short timeout.
   editableField.handleKeyUp_({keyCode: goog.events.KeyCodes.LEFT});
+  assertEquals('Before selection change should fire immediately', 1,
+      beforeSelectionChanges.getCallCount());
   assertEquals('Selection change should be on a timer', 0,
       selectionChanges.getCallCount());
   clock.tick(1000);
@@ -820,6 +901,10 @@ function testSelectionChangeOnMouseUp() {
       new goog.events.BrowserEvent({type: 'mouseup', target: 'fakeTarget'});
   var editableField = new FieldConstructor('testField', document);
   var clock = new goog.testing.MockClock(true);
+  var beforeSelectionChanges = goog.testing.recordFunction();
+  goog.events.listen(editableField,
+      goog.editor.Field.EventType.BEFORESELECTIONCHANGE,
+      beforeSelectionChanges);
   var selectionChanges = goog.testing.recordFunction();
   goog.events.listen(editableField, goog.editor.Field.EventType.SELECTIONCHANGE,
       selectionChanges);
@@ -830,9 +915,12 @@ function testSelectionChangeOnMouseUp() {
 
   editableField.makeEditable();
 
-  // Emulate a mouseup event, this should result in an immediate
-  // SELECTIONCHANGE, plus a second one in IE after a short timeout.
+  // Emulate a mouseup event, this should result in immediate
+  // BEFORESELECTIONCHANGE and SELECTIONCHANGE, plus a second SELECTIONCHANGE in
+  // IE after a short timeout.
   editableField.handleMouseUp_(fakeEvent);
+  assertEquals('Before selection change should fire immediately', 1,
+      beforeSelectionChanges.getCallCount());
   assertEquals('Selection change should fire immediately', 1,
       selectionChanges.getCallCount());
   assertEquals('Plugin should have handled selection change immediately', 1,
@@ -919,12 +1007,19 @@ function testQueryCommandValue() {
   editableField.makeEditable();
   assertFalse(editableField.queryCommandValue('boo'));
 
-  editableField.getElement().focus();
-  editableField.dispatchSelectionChangeEvent();
+  focusFieldSync(editableField);
   assertNull(editableField.queryCommandValue('boo'));
   assertObjectEquals({'boo': null, 'aieee': null},
       editableField.queryCommandValue(['boo', 'aieee']));
   editableField.dispose();
+}
+
+function focusFieldSync(field) {
+  field.focus();
+
+  // IE fires focus events async, so create a fake focus event
+  // synchronously.
+  goog.testing.events.fireFocusEvent(field.getElement());
 }
 
 
@@ -1030,7 +1125,7 @@ function testRestoreSavedRange() {
 
   // Create another node to take the focus later.
   var doc = goog.dom.getOwnerDocument(editableField.getElement());
-  var otherElem = doc.createElement('div');
+  var otherElem = doc.createElement(goog.dom.TagName.DIV);
   otherElem.tabIndex = '1';  // Make it focusable.
   editableField.getElement().parentNode.appendChild(otherElem);
 
@@ -1227,7 +1322,7 @@ function testHandleWindowLevelMouseUp() {
         selectionHasFired = true;
       });
   var editableElement = editableField.getElement();
-  var otherElement = goog.dom.createDom('div');
+  var otherElement = goog.dom.createDom(goog.dom.TagName.DIV);
   goog.dom.insertSiblingAfter(otherElement, document.body.lastChild);
 
   goog.testing.events.fireMouseDownEvent(editableElement);
@@ -1247,7 +1342,7 @@ function testNoHandleWindowLevelMouseUp() {
         selectionHasFired = true;
       });
   var editableElement = editableField.getElement();
-  var otherElement = goog.dom.createDom('div');
+  var otherElement = goog.dom.createDom(goog.dom.TagName.DIV);
   goog.dom.insertSiblingAfter(otherElement, document.body.lastChild);
 
   goog.testing.events.fireMouseDownEvent(editableElement);
@@ -1275,4 +1370,23 @@ function testIsGeneratingKey() {
   } else {
     assertFalse(goog.editor.Field.isGeneratingKey_(imeKeyEvent, false));
   }
+}
+
+function testSetEditableClassName() {
+  var element = goog.dom.getElement('testField');
+  var editableField = new FieldConstructor('testField');
+
+  assertFalse(goog.dom.classlist.contains(element, 'editable'));
+  editableField.makeEditable();
+  assertTrue(goog.dom.classlist.contains(element, 'editable'));
+  assertEquals(1, goog.array.count(
+      goog.dom.classlist.get(element), goog.functions.equalTo('editable')));
+
+  // Skip restore won't reset the original element's CSS classes.
+  editableField.makeUneditable(true /* opt_skipRestore */);
+
+  editableField.makeEditable();
+  assertTrue(goog.dom.classlist.contains(element, 'editable'));
+  assertEquals(1, goog.array.count(
+      goog.dom.classlist.get(element), goog.functions.equalTo('editable')));
 }

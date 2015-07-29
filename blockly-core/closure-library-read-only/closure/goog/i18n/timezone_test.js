@@ -69,10 +69,10 @@ function testIsDaylightTime() {
   // 2007/03/10 in UTC.
   dt.setUTCDate(11);
   dt.setUTCHours(2 + 8);
-  dt.setMinutes(1);
+  dt.setUTCMinutes(1);
   assertTrue(usPacific.isDaylightTime(dt));
   dt.setUTCHours(1 + 8);
-  dt.setMinutes(59);
+  dt.setUTCMinutes(59);
   assertTrue(!usPacific.isDaylightTime(dt));
 
   dt = new Date(2007, 11 - 1, 4);
@@ -80,12 +80,12 @@ function testIsDaylightTime() {
   // Greenwich.
   dt.setUTCDate(4);
   dt.setUTCHours(2 + 7);
-  dt.setMinutes(1);
+  dt.setUTCMinutes(1);
   assertTrue(!usPacific.isDaylightTime(dt));
 
   // there seems to be a browser bug. local time 1:59am should still be PDT.
   dt.setUTCHours(0 + 7);
-  dt.setMinutes(59);
+  dt.setUTCMinutes(59);
   assertTrue(usPacific.isDaylightTime(dt));
 }
 

@@ -15,6 +15,7 @@
 goog.provide('goog.dom.xmlTest');
 goog.setTestOnly('goog.dom.xmlTest');
 
+goog.require('goog.dom.TagName');
 goog.require('goog.dom.xml');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent');
@@ -32,7 +33,8 @@ function testSerialize() {
 }
 
 function testBelowMaxDepthInIE() {
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('9')) {
+    // This value is only effective in IE8 and below
     goog.dom.xml.MAX_ELEMENT_DEPTH = 5;
     var junk = '<a><b><c><d><e>Hello</e></d></c></b></a>';
     var doc = goog.dom.xml.loadXml(junk);
@@ -42,7 +44,8 @@ function testBelowMaxDepthInIE() {
 }
 
 function testAboveMaxDepthInIE() {
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('9')) {
+    // This value is only effective in IE8 and below
     goog.dom.xml.MAX_ELEMENT_DEPTH = 4;
     var junk = '<a><b><c><d><e>Hello</e></d></c></b></a>';
     var doc = goog.dom.xml.loadXml(junk);
@@ -52,7 +55,8 @@ function testAboveMaxDepthInIE() {
 }
 
 function testBelowMaxSizeInIE() {
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('9')) {
+    // This value is only effective in IE8 and below
     goog.dom.xml.MAX_XML_SIZE_KB = 1;
     var junk = '<a>' + new Array(50).join('<b>junk</b>') + '</a>';
     var doc = goog.dom.xml.loadXml(junk);
@@ -62,7 +66,8 @@ function testBelowMaxSizeInIE() {
 }
 
 function testMaxSizeInIE() {
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('9')) {
+    // This value is only effective in IE8 and below
     goog.dom.xml.MAX_XML_SIZE_KB = 1;
     var junk = '<a>' + new Array(1000).join('<b>junk</b>') + '</a>';
     var doc = goog.dom.xml.loadXml(junk);
@@ -73,7 +78,7 @@ function testMaxSizeInIE() {
 
 function testSetAttributes() {
   var xmlElement = goog.dom.xml.createDocument().createElement('root');
-  var domElement = document.createElement('div');
+  var domElement = document.createElement(goog.dom.TagName.DIV);
   var attrs = {
     name: 'test3',
     title: 'A title',

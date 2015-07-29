@@ -38,7 +38,9 @@ goog.provide('goog.ui.ScrollFloater');
 goog.provide('goog.ui.ScrollFloater.EventType');
 
 goog.require('goog.array');
+goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
@@ -195,7 +197,7 @@ goog.ui.ScrollFloater.FloatMode_ = {
 /**
  * The style properties which are stored when we float an element, so they
  * can be restored when it 'docks' again.
- * @type {Array.<string>}
+ * @type {Array<string>}
  * @private
  */
 goog.ui.ScrollFloater.STORED_STYLE_PROPS_ = [
@@ -204,7 +206,7 @@ goog.ui.ScrollFloater.STORED_STYLE_PROPS_ = [
 
 /**
  * The style elements managed for the placeholder object.
- * @type {Array.<string>}
+ * @type {Array<string>}
  * @private
  */
 goog.ui.ScrollFloater.PLACEHOLDER_STYLE_PROPS_ = [
@@ -239,7 +241,7 @@ goog.ui.ScrollFloater.prototype.createDom = function() {
  */
 goog.ui.ScrollFloater.prototype.decorateInternal = function(element) {
   goog.ui.ScrollFloater.base(this, 'decorateInternal', element);
-
+  goog.asserts.assert(element);
   goog.dom.classlist.add(element, goog.ui.ScrollFloater.CSS_CLASS_);
 };
 
@@ -249,8 +251,8 @@ goog.ui.ScrollFloater.prototype.enterDocument = function() {
   goog.ui.ScrollFloater.base(this, 'enterDocument');
 
   if (!this.placeholder_) {
-    this.placeholder_ =
-        this.getDomHelper().createDom('div', {'style': 'visibility:hidden'});
+    this.placeholder_ = this.getDomHelper().createDom(
+        goog.dom.TagName.DIV, {'style': 'visibility:hidden'});
   }
 
   this.update();
@@ -463,7 +465,7 @@ goog.ui.ScrollFloater.prototype.float_ = function(floatMode) {
     return;
   }
 
-  var elem = this.getElement();
+  var elem = /** @type {!HTMLElement} */ (this.getElement());
   var doc = this.getDomHelper().getDocument();
 
   // Read properties of element before modifying it.

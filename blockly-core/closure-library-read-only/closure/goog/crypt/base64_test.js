@@ -44,6 +44,25 @@ function testByteArrayEncoding() {
     var dec = goog.crypt.byteArrayToString(
         goog.crypt.base64.decodeStringToByteArray(enc));
     assertEquals(tests[i], dec);
+
+    // Check that websafe decoding accepts non-websafe codes.
+    dec = goog.crypt.byteArrayToString(
+        goog.crypt.base64.decodeStringToByteArray(enc, true /* websafe */));
+    assertEquals(tests[i], dec);
+
+    // Re-encode as websafe.
+    enc = goog.crypt.base64.encodeByteArray(
+        goog.crypt.stringToByteArray(tests[i], true /* websafe */));
+
+    // Check that non-websafe decoding accepts websafe codes.
+    dec = goog.crypt.byteArrayToString(
+        goog.crypt.base64.decodeStringToByteArray(enc));
+    assertEquals(tests[i], dec);
+
+    // Check that websafe decoding accepts websafe codes.
+    dec = goog.crypt.byteArrayToString(
+        goog.crypt.base64.decodeStringToByteArray(enc, true /* websafe */));
+    assertEquals(tests[i], dec);
   }
 }
 
@@ -57,6 +76,28 @@ function testOddLengthByteArrayEncoding() {
   for (i = 0; i < buffer.length; i++) {
     assertEquals(buffer[i], decodedBuffer[i]);
   }
+}
+
+// Tests that decoding a string where the length is not a multiple of 4 does
+// not produce spurious trailing zeroes.  This is a regression test for
+// cl/65120705, which fixes a bug that was introduced when support for
+// non-padded base64 encoding was added in cl/20209336.
+function testOddLengthByteArrayDecoding() {
+  // The base-64 encoding of the bytes [97, 98, 99, 100], with no padding.
+  // The padded version would be "YWJjZA==" (length 8), or "YWJjZA.." if
+  // web-safe.
+  var encodedBuffer = 'YWJjZA';
+  var decodedBuffer1 = goog.crypt.base64.decodeStringToByteArray(encodedBuffer);
+  assertEquals(4, decodedBuffer1.length);
+  // Note that byteArrayToString ignores any trailing zeroes because
+  // String.fromCharCode(0) is ''.
+  assertEquals('abcd', goog.crypt.byteArrayToString(decodedBuffer1));
+
+  // Repeat the test in web-safe decoding mode.
+  var decodedBuffer2 = goog.crypt.base64.decodeStringToByteArray(encodedBuffer,
+      true  /* web-safe */);
+  assertEquals(4, decodedBuffer2.length);
+  assertEquals('abcd', goog.crypt.byteArrayToString(decodedBuffer2));
 }
 
 function testShortcutPathEncoding() {
@@ -110,6 +151,6 @@ function testWebSafeEncoding() {
 
   // Test parsing malformed characters
   assertThrows('Didn\'t throw on malformed input', function() {
-    goog.crypt.base64.decodeStringToByteArray('foooooo+oooo', true /*websafe*/);
+    goog.crypt.base64.decodeStringToByteArray('foooooo)oooo', true /*websafe*/);
   });
 }

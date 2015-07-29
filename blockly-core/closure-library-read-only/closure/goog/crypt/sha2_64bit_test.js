@@ -26,21 +26,6 @@ goog.require('goog.userAgent');
 
 
 /**
- * Simple sanity tests for hash functions.
- */
-function testBasicOperations() {
-  var sha512 = new goog.crypt.Sha512();
-  goog.crypt.hashTester.runBasicTests(sha512);
-
-  var sha384 = new goog.crypt.Sha384();
-  goog.crypt.hashTester.runBasicTests(sha384);
-
-  var sha256 = new goog.crypt.Sha512_256();
-  goog.crypt.hashTester.runBasicTests(sha256);
-}
-
-
-/**
  * Each object in the test vector array is a source text and one or more
  * hashes of that source text.  The source text is either a string or a
  * byte array.
@@ -52,7 +37,7 @@ function testBasicOperations() {
  *   csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA2_Additional.pdf
  *   en.wikipedia.org/wiki/SHA-2#Examples_of_SHA-2_variants
  */
-var testVector = [
+var TEST_VECTOR = [
   {
     // Make sure the algorithm correctly handles the empty string
     source:
@@ -97,16 +82,43 @@ var testVector = [
         '4011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1',
     256:
         'dd9d67b371519c339ed8dbd25af90e976a1eeefd4ad3d889005e532fc5bef04d'
-  },
-  {
-    // Make sure the algorithm correctly handles long strings
-    source:
-        goog.array.repeat(0, 1000000),
-    512:
-        'ce044bc9fd43269d5bbc946cbebc3bb711341115cc4abdf2edbc3ff2c57ad4b1' +
-        '5deb699bda257fea5aef9c6e55fcf4cf9dc25a8c3ce25f2efe90908379bff7ed'
   }
 ];
+
+
+/**
+ * For each integer key N, the value is the SHA-512 value of a string
+ * consisting of N repetitions of the character 'a'.
+ */
+var TEST_FENCEPOST_VECTOR = {
+  110:
+      'c825949632e509824543f7eaf159fb6041722fce3c1cdcbb613b3d37ff107c51' +
+      '9417baac32f8e74fe29d7f4823bf6886956603dca5354a6ed6e4a542e06b7d28',
+  111:
+      'fa9121c7b32b9e01733d034cfc78cbf67f926c7ed83e82200ef8681819692176' +
+      '0b4beff48404df811b953828274461673c68d04e297b0eb7b2b4d60fc6b566a2',
+  112:
+      'c01d080efd492776a1c43bd23dd99d0a2e626d481e16782e75d54c2503b5dc32' +
+      'bd05f0f1ba33e568b88fd2d970929b719ecbb152f58f130a407c8830604b70ca',
+  113:
+      '55ddd8ac210a6e18ba1ee055af84c966e0dbff091c43580ae1be703bdb85da31' +
+      'acf6948cf5bd90c55a20e5450f22fb89bd8d0085e39f85a86cc46abbca75e24d'
+};
+
+
+/**
+ * Simple sanity tests for hash functions.
+ */
+function testBasicOperations() {
+  var sha512 = new goog.crypt.Sha512();
+  goog.crypt.hashTester.runBasicTests(sha512);
+
+  var sha384 = new goog.crypt.Sha384();
+  goog.crypt.hashTester.runBasicTests(sha384);
+
+  var sha256 = new goog.crypt.Sha512_256();
+  goog.crypt.hashTester.runBasicTests(sha256);
+}
 
 
 /**
@@ -117,62 +129,150 @@ var testVector = [
  * If the item has a key matching the key argument passed to this
  * function, it is the expected value of the hash function.
  *
- * @param {goog.crypt.Sha2_64bit} hasher The hasher to test
- * @param {string} key The key in testVector whose value represents the
- *     expected result of this hash on the source.
+ * @param {!goog.crypt.Sha2_64bit} hasher The hasher to test
+ * @param {number} length The length of the resulting hash, in bits.
+ *     Also the key to use in TEST_VECTOR for the expected hash value
  */
-function hashGoldenTester(hasher, key) {
-  count = 0;
-  goog.array.forEach(testVector, function(data) {
-    if (data[key]) {
-      hasher.reset();
-      hasher.update(data.source);
-      var digest = hasher.digest();
-      var expected = goog.crypt.hexToByteArray(data[key]);
-      assertElementsEquals(expected, digest);
-      count++;
+function hashGoldenTester(hasher, length) {
+  goog.array.forEach(TEST_VECTOR, function(data) {
+    hasher.update(data.source);
+    var digest = hasher.digest();
+    assertEquals('Hash digest has the wrong length', length, digest.length * 8);
+    if (data[length]) {
+      // We're given an expected value
+      var expected = goog.crypt.hexToByteArray(data[length]);
+      assertElementsEquals(
+          'Wrong result for hash' + length + '(\'' + data.source + '\')',
+          expected, digest);
     }
+    hasher.reset();
   });
-  // There must be a typo if no tests are run.  This assertion assures that
-  // the test code is correct.
-  assertTrue('Error in testing.  At least one test should be run',
-      count > 0);
 }
 
 
 /** Test that Sha512() returns the published values */
 function testHashing512() {
-  // This test tends to time out on IE7.
-  if (!goog.userAgent.IE || goog.userAgent.isVersionOrHigher('8')) {
-    hashGoldenTester(new goog.crypt.Sha512(), '512');
-  }
+  hashGoldenTester(new goog.crypt.Sha512(), 512);
 }
 
 
 /** Test that Sha384 returns the published values */
 function testHashing384() {
-  hashGoldenTester(new goog.crypt.Sha384(), '384');
+  hashGoldenTester(new goog.crypt.Sha384(), 384);
 }
 
 
 /** Test that Sha512_256 returns the published values */
 function testHashing256() {
-  hashGoldenTester(new goog.crypt.Sha512_256(), '256');
+  hashGoldenTester(new goog.crypt.Sha512_256(), 256);
+}
+
+
+/** Test that the opt_length works */
+function testHashing_optLength() {
+  var hasher = new goog.crypt.Sha512();
+  hasher.update('1234567890');
+  var digest1 = hasher.digest();
+  hasher.reset();
+  hasher.update('12345678901234567890', 10);
+  var digest2 = hasher.digest();
+  assertElementsEquals(digest1, digest2);
+}
+
+
+/**
+ * Make sure that we correctly handle strings whose length is 110-113.
+ * This is the area where we are likely to hit fencepost errors in the padding
+ * code.
+ */
+function testFencepostErrors() {
+  var hasher = new goog.crypt.Sha512();
+  A64 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  A128 = A64 + A64;
+  for (var i = 110; i <= 113; i++) {
+    hasher.update(A128, i);
+    var digest = hasher.digest();
+    var expected = goog.crypt.hexToByteArray(TEST_FENCEPOST_VECTOR[i]);
+    assertElementsEquals('Fencepost ' + i, expected, digest);
+    hasher.reset();
+  }
+}
+
+
+/** Test one really large string using SHA512 */
+function testHashing512Large() {
+  // This test tends to time out on IE7.
+  if (!goog.userAgent.IE || goog.userAgent.isVersionOrHigher('8')) {
+    var hasher = new goog.crypt.Sha512();
+    hasher.update(goog.array.repeat(0, 1000000));
+    var digest = hasher.digest();
+    var expected = goog.crypt.hexToByteArray(
+        'ce044bc9fd43269d5bbc946cbebc3bb711341115cc4abdf2edbc3ff2c57ad4b1' +
+        '5deb699bda257fea5aef9c6e55fcf4cf9dc25a8c3ce25f2efe90908379bff7ed');
+    assertElementsEquals(expected, digest);
+  }
 }
 
 
 /** Check that the code throws an error for bad input */
-function testBadInput() {
-  assertThrows('Bad input', function() {
-    new goog.crypt.Sha512().update({});
+function testBadInput_nullNotAllowed() {
+  var hasher = new goog.crypt.Sha512();
+  assertThrows('Null input not allowed', function() {
+    hasher.update({});
   });
+}
+
+function testBadInput_noFloatingPoint() {
+  var hasher = new goog.crypt.Sha512();
   assertThrows('Floating point not allows', function() {
-    new goog.crypt.Sha512().update([1, 2, 3, 4, 4.5]);
+    hasher.update([1, 2, 3, 4, 4.5]);
   });
+}
+
+function testBadInput_negativeNotAllowed() {
+  var hasher = new goog.crypt.Sha512();
   assertThrows('Negative not allowed', function() {
-    new goog.crypt.Sha512().update([1, 2, 3, 4, -10]);
+    hasher.update([1, 2, 3, 4, -10]);
   });
+}
+
+function testBadInput_mustBeByteArray() {
+  var hasher = new goog.crypt.Sha512();
   assertThrows('Must be byte array', function() {
-    new goog.crypt.Sha512().update([1, 2, 3, 4, {}]);
+    hasher.update([1, 2, 3, 4, {}]);
+  });
+}
+
+function testBadInput_byteTooLarge() {
+  var hasher = new goog.crypt.Sha512();
+  assertThrows('>255 not allowed', function() {
+    hasher.update([1, 2, 3, 4, 256]);
+  });
+}
+
+function testBadInput_characterTooLarge() {
+  var hasher = new goog.crypt.Sha512();
+  assertThrows('>255 not allowed', function() {
+    hasher.update('abc' + String.fromCharCode(256));
+  });
+}
+
+
+function testHasherNeedsReset_beforeDigest() {
+  var hasher = new goog.crypt.Sha512();
+  hasher.update('abc');
+  hasher.digest();
+  assertThrows('Need reset after digest', function() {
+    hasher.digest();
+  });
+}
+
+
+function testHasherNeedsReset_beforeUpdate() {
+  var hasher = new goog.crypt.Sha512();
+  hasher.update('abc');
+  hasher.digest();
+  assertThrows('Need reset after digest', function() {
+    hasher.update('abc');
   });
 }

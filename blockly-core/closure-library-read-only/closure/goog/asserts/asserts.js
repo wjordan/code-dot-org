@@ -31,6 +31,7 @@
  * The compiler will leave in foo() (because its return value is used),
  * but it will remove bar() because it assumes it does not have side-effects.
  *
+ * @author agrieve@google.com (Andrew Grieve)
  */
 
 goog.provide('goog.asserts');
@@ -51,7 +52,7 @@ goog.define('goog.asserts.ENABLE_ASSERTS', goog.DEBUG);
 /**
  * Error object for failed assertions.
  * @param {string} messagePattern The pattern that was used to form message.
- * @param {!Array.<*>} messageArgs The items to substitute into the pattern.
+ * @param {!Array<*>} messageArgs The items to substitute into the pattern.
  * @constructor
  * @extends {goog.debug.Error}
  * @final
@@ -78,12 +79,26 @@ goog.asserts.AssertionError.prototype.name = 'AssertionError';
 
 
 /**
+ * The default error handler.
+ * @param {!goog.asserts.AssertionError} e The exception to be handled.
+ */
+goog.asserts.DEFAULT_ERROR_HANDLER = function(e) { throw e; };
+
+
+/**
+ * The handler responsible for throwing or logging assertion errors.
+ * @private {function(!goog.asserts.AssertionError)}
+ */
+goog.asserts.errorHandler_ = goog.asserts.DEFAULT_ERROR_HANDLER;
+
+
+/**
  * Throws an exception with the given message and "Assertion failed" prefixed
  * onto it.
  * @param {string} defaultMessage The message to use if givenMessage is empty.
- * @param {Array.<*>} defaultArgs The substitution arguments for defaultMessage.
+ * @param {Array<*>} defaultArgs The substitution arguments for defaultMessage.
  * @param {string|undefined} givenMessage Message supplied by the caller.
- * @param {Array.<*>} givenArgs The substitution arguments for givenMessage.
+ * @param {Array<*>} givenArgs The substitution arguments for givenMessage.
  * @throws {goog.asserts.AssertionError} When the value is not a number.
  * @private
  */
@@ -101,7 +116,21 @@ goog.asserts.doAssertFailure_ =
   // a stack trace is added to var message above. With this, a stack trace is
   // not added until this line (it causes the extra garbage to be added after
   // the assertion message instead of in the middle of it).
-  throw new goog.asserts.AssertionError('' + message, args || []);
+  var e = new goog.asserts.AssertionError('' + message, args || []);
+  goog.asserts.errorHandler_(e);
+};
+
+
+/**
+ * Sets a custom error handler that can be used to customize the behavior of
+ * assertion failures, for example by turning all assertion failures into log
+ * messages.
+ * @param {function(!goog.asserts.AssertionError)} errorHandler
+ */
+goog.asserts.setErrorHandler = function(errorHandler) {
+  if (goog.asserts.ENABLE_ASSERTS) {
+    goog.asserts.errorHandler_ = errorHandler;
+  }
 };
 
 
@@ -144,9 +173,9 @@ goog.asserts.assert = function(condition, opt_message, var_args) {
  */
 goog.asserts.fail = function(opt_message, var_args) {
   if (goog.asserts.ENABLE_ASSERTS) {
-    throw new goog.asserts.AssertionError(
+    goog.asserts.errorHandler_(new goog.asserts.AssertionError(
         'Failure' + (opt_message ? ': ' + opt_message : ''),
-        Array.prototype.slice.call(arguments, 1));
+        Array.prototype.slice.call(arguments, 1)));
   }
 };
 
@@ -229,7 +258,7 @@ goog.asserts.assertObject = function(value, opt_message, var_args) {
  * @param {*} value The value to check.
  * @param {string=} opt_message Error message in case of failure.
  * @param {...*} var_args The items to substitute into the failure message.
- * @return {!Array} The value, guaranteed to be a non-null array.
+ * @return {!Array<?>} The value, guaranteed to be a non-null array.
  * @throws {goog.asserts.AssertionError} When the value is not an array.
  */
 goog.asserts.assertArray = function(value, opt_message, var_args) {
@@ -238,7 +267,7 @@ goog.asserts.assertArray = function(value, opt_message, var_args) {
         [goog.typeOf(value), value], opt_message,
         Array.prototype.slice.call(arguments, 2));
   }
-  return /** @type {!Array} */ (value);
+  return /** @type {!Array<?>} */ (value);
 };
 
 
@@ -268,7 +297,7 @@ goog.asserts.assertBoolean = function(value, opt_message, var_args) {
  * @param {...*} var_args The items to substitute into the failure message.
  * @return {!Element} The value, likely to be a DOM Element when asserts are
  *     enabled.
- * @throws {goog.asserts.AssertionError} When the value is not a boolean.
+ * @throws {goog.asserts.AssertionError} When the value is not an Element.
  */
 goog.asserts.assertElement = function(value, opt_message, var_args) {
   if (goog.asserts.ENABLE_ASSERTS && (!goog.isObject(value) ||
@@ -293,12 +322,13 @@ goog.asserts.assertElement = function(value, opt_message, var_args) {
  * @param {...*} var_args The items to substitute into the failure message.
  * @throws {goog.asserts.AssertionError} When the value is not an instance of
  *     type.
- * @return {!T}
+ * @return {T}
  * @template T
  */
 goog.asserts.assertInstanceof = function(value, type, opt_message, var_args) {
   if (goog.asserts.ENABLE_ASSERTS && !(value instanceof type)) {
-    goog.asserts.doAssertFailure_('instanceof check failed.', null,
+    goog.asserts.doAssertFailure_('Expected instanceof %s but got %s.',
+        [goog.asserts.getType_(type), goog.asserts.getType_(value)],
         opt_message, Array.prototype.slice.call(arguments, 3));
   }
   return value;
@@ -312,5 +342,24 @@ goog.asserts.assertInstanceof = function(value, type, opt_message, var_args) {
 goog.asserts.assertObjectPrototypeIsIntact = function() {
   for (var key in Object.prototype) {
     goog.asserts.fail(key + ' should not be enumerable in Object.prototype.');
+  }
+};
+
+
+/**
+ * Returns the type of a value. If a constructor is passed, and a suitable
+ * string cannot be found, 'unknown type name' will be returned.
+ * @param {*} value A constructor, object, or primitive.
+ * @return {string} The best display name for the value, or 'unknown type name'.
+ * @private
+ */
+goog.asserts.getType_ = function(value) {
+  if (value instanceof Function) {
+    return value.displayName || value.name || 'unknown type name';
+  } else if (value instanceof Object) {
+    return value.constructor.displayName || value.constructor.name ||
+        Object.prototype.toString.call(value);
+  } else {
+    return value === null ? 'null' : typeof value;
   }
 };

@@ -24,7 +24,7 @@ goog.setTestOnly('goog.math.PathTest');
 
 /**
  * Array mapping numeric segment constant to a descriptive character.
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  * @private
  */
 var SEGMENT_NAMES_ = function() {
@@ -40,7 +40,7 @@ var SEGMENT_NAMES_ = function() {
 
 /**
  * Test if the given path matches the expected array of commands and parameters.
- * @param {Array.<string|number>} expected The expected array of commands and
+ * @param {Array<string|number>} expected The expected array of commands and
  *     parameters.
  * @param {goog.math.Path} path The path to test against.
  */
@@ -462,4 +462,57 @@ function testIsEmpty() {
 
   path.clear();
   assertTrue('After clear, path is empty again', path.isEmpty());
+}
+
+
+function testGetSegmentTypes() {
+  var path = new goog.math.Path();
+  path.moveTo(0, 0);
+  path.lineTo(10, 20, 30, 40);
+  path.close();
+
+  var Segment = goog.math.Path.Segment;
+  var segmentTypes = path.getSegmentTypes();
+  assertArrayEquals(
+      'The returned segment types do not match the expected values',
+      [Segment.MOVETO, Segment.LINETO, Segment.CLOSE], segmentTypes);
+
+  segmentTypes[2] = Segment.LINETO;
+  assertArrayEquals('Modifying the returned segment types changed the path',
+      [Segment.MOVETO, Segment.LINETO, Segment.CLOSE], path.getSegmentTypes());
+}
+
+
+function testGetSegmentCounts() {
+  var path = new goog.math.Path();
+  path.moveTo(0, 0);
+  path.lineTo(10, 20, 30, 40);
+  path.close();
+
+  var segmentTypes = path.getSegmentCounts();
+  assertArrayEquals(
+      'The returned segment counts do not match the expected values',
+      [1, 2, 1], segmentTypes);
+
+  segmentTypes[1] = 3;
+  assertArrayEquals('Modifying the returned segment counts changed the path',
+      [1, 2, 1], path.getSegmentCounts());
+}
+
+
+function testGetSegmentArgs() {
+  var path = new goog.math.Path();
+  path.moveTo(0, 0);
+  path.lineTo(10, 20, 30, 40);
+  path.close();
+
+  var segmentTypes = path.getSegmentArgs();
+  assertArrayEquals(
+      'The returned segment args do not match the expected values',
+      [0, 0, 10, 20, 30, 40], segmentTypes);
+
+  segmentTypes[1] = -10;
+  assertArrayEquals(
+      'Modifying the returned segment args changed the path',
+      [0, 0, 10, 20, 30, 40], path.getSegmentArgs());
 }

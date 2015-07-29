@@ -18,6 +18,7 @@ goog.setTestOnly('goog.objectTest');
 goog.require('goog.functions');
 goog.require('goog.object');
 goog.require('goog.testing.jsunit');
+goog.require('goog.testing.recordFunction');
 
 function stringifyObject(m) {
   var keys = goog.object.getKeys(m);
@@ -281,6 +282,39 @@ function testSetDefault() {
   assertEquals(1, dict['a']);
 }
 
+function createRecordedGetFoo() {
+  return goog.testing.recordFunction(goog.functions.constant('foo'));
+}
+
+function testSetWithReturnValueNotSet_KeyIsSet() {
+  var f = createRecordedGetFoo();
+  var obj = {};
+  obj['key'] = 'bar';
+  assertEquals(
+      'bar',
+      goog.object.setWithReturnValueIfNotSet(obj, 'key', f));
+  f.assertCallCount(0);
+}
+
+function testSetWithReturnValueNotSet_KeyIsNotSet() {
+  var f = createRecordedGetFoo();
+  var obj = {};
+  assertEquals(
+      'foo',
+      goog.object.setWithReturnValueIfNotSet(obj, 'key', f));
+  f.assertCallCount(1);
+}
+
+function testSetWithReturnValueNotSet_KeySetValueIsUndefined() {
+  var f = createRecordedGetFoo();
+  var obj = {};
+  obj['key'] = undefined;
+  assertEquals(
+      undefined,
+      goog.object.setWithReturnValueIfNotSet(obj, 'key', f));
+  f.assertCallCount(0);
+}
+
 function testTranspose() {
   var m = getObject();
   var b = goog.object.transpose(m);
@@ -432,7 +466,9 @@ function testGetValueByKeysArraySyntax() {
 }
 
 function testImmutableView() {
-  if (!Object.isFrozen) return;
+  if (!Object.isFrozen) {
+    return;
+  }
   var x = {propA: 3};
   var y = goog.object.createImmutableView(x);
   x.propA = 4;
@@ -456,7 +492,13 @@ function testImmutableView() {
 function testImmutableViewStrict() {
   'use strict';
 
-  if (!Object.isFrozen) return;
+  // IE9 supports isFrozen, but does not support strict mode. Exit early if we
+  // are not actually running in strict mode.
+  var isStrict = (function() { return !this; })();
+
+  if (!Object.isFrozen || !isStrict) {
+    return;
+  }
   var x = {propA: 3};
   var y = goog.object.createImmutableView(x);
   assertThrows(function() {
@@ -465,4 +507,24 @@ function testImmutableViewStrict() {
   assertThrows(function() {
     y.propB = 4;
   });
+}
+
+function testEmptyObjectsAreEqual() {
+  assertTrue(goog.object.equals({}, {}));
+}
+
+function testObjectsWithDifferentKeysAreUnequal() {
+  assertFalse(goog.object.equals({'a': 1}, {'b': 1}));
+}
+
+function testObjectsWithDifferentValuesAreUnequal() {
+  assertFalse(goog.object.equals({'a': 1}, {'a': 2}));
+}
+
+function testObjectsWithSameKeysAndValuesAreEqual() {
+  assertTrue(goog.object.equals({'a': 1}, {'a': 1}));
+}
+
+function testObjectsWithSameKeysInDifferentOrderAreEqual() {
+  assertTrue(goog.object.equals({'a': 1, 'b': 2}, {'b': 2, 'a': 1}));
 }

@@ -429,7 +429,7 @@ function testFieldDescriptor() {
   var descriptor = message.getDescriptor();
   var fields = descriptor.getFields();
 
-  assertEquals(40, fields.length);
+  assertEquals(53, fields.length);
 
   // Check the containing types.
   for (var i = 0; i < fields.length; ++i) {
@@ -480,6 +480,20 @@ function testFieldDescriptor() {
   assertEquals('repeated_int64_number', fields[38].getName());
   assertEquals('repeated_int64_string', fields[39].getName());
 
+  assertEquals('packed_int32', fields[40].getName());
+  assertEquals('packed_int64', fields[41].getName());
+  assertEquals('packed_uint32', fields[42].getName());
+  assertEquals('packed_uint64', fields[43].getName());
+  assertEquals('packed_sint32', fields[44].getName());
+  assertEquals('packed_sint64', fields[45].getName());
+  assertEquals('packed_fixed32', fields[46].getName());
+  assertEquals('packed_fixed64', fields[47].getName());
+  assertEquals('packed_sfixed32', fields[48].getName());
+  assertEquals('packed_sfixed64', fields[49].getName());
+  assertEquals('packed_float', fields[50].getName());
+  assertEquals('packed_double', fields[51].getName());
+  assertEquals('packed_bool', fields[52].getName());
+
   // Check the field types.
   var FieldType = goog.proto2.FieldDescriptor.FieldType;
   assertEquals(FieldType.INT32, fields[0].getFieldType());
@@ -524,6 +538,20 @@ function testFieldDescriptor() {
   assertEquals(FieldType.INT64, fields[37].getFieldType());
   assertEquals(FieldType.INT64, fields[38].getFieldType());
   assertEquals(FieldType.INT64, fields[39].getFieldType());
+
+  assertEquals(FieldType.INT32, fields[40].getFieldType());
+  assertEquals(FieldType.INT64, fields[41].getFieldType());
+  assertEquals(FieldType.UINT32, fields[42].getFieldType());
+  assertEquals(FieldType.UINT64, fields[43].getFieldType());
+  assertEquals(FieldType.SINT32, fields[44].getFieldType());
+  assertEquals(FieldType.SINT64, fields[45].getFieldType());
+  assertEquals(FieldType.FIXED32, fields[46].getFieldType());
+  assertEquals(FieldType.FIXED64, fields[47].getFieldType());
+  assertEquals(FieldType.SFIXED32, fields[48].getFieldType());
+  assertEquals(FieldType.SFIXED64, fields[49].getFieldType());
+  assertEquals(FieldType.FLOAT, fields[50].getFieldType());
+  assertEquals(FieldType.DOUBLE, fields[51].getFieldType());
+  assertEquals(FieldType.BOOL, fields[52].getFieldType());
 
   // Check the field native types.
   // Singular.
@@ -577,6 +605,21 @@ function testFieldDescriptor() {
 
   assertEquals(Number, fields[38].getNativeType());  // [jstype="number"]
   assertEquals(String, fields[39].getNativeType());
+
+  // Packed (only numeric types can be packed).
+  assertEquals(Number, fields[40].getNativeType());
+  assertEquals(Number, fields[41].getNativeType());
+  assertEquals(Number, fields[42].getNativeType());
+  assertEquals(Number, fields[43].getNativeType());
+  assertEquals(Number, fields[44].getNativeType());
+  assertEquals(Number, fields[45].getNativeType());
+  assertEquals(Number, fields[46].getNativeType());
+  assertEquals(Number, fields[47].getNativeType());
+  assertEquals(Number, fields[48].getNativeType());
+  assertEquals(Number, fields[49].getNativeType());
+  assertEquals(Number, fields[50].getNativeType());
+  assertEquals(Number, fields[51].getNativeType());
+  assertEquals(Boolean, fields[52].getNativeType());
 }
 
 function testUnknown() {
@@ -688,11 +731,10 @@ function testReflection() {
       message.arrayOf(repeatedInt64)[1]);
 }
 
-function testDefaultValuesForMessages_actualBehavior() {
+function testDefaultValuesForMessages() {
   var message = new proto2.TestDefaultParent();
-  // The default child message is shared between all TestDefaultParent messges.
   // Ideally this object would be immutable, but the current API does not
-  // enforce that behavior.
+  // enforce that behavior, so get**OrDefault returns a new instance every time.
   var child = message.getChildOrDefault();
   child.setFoo(false);
   // Changing the value returned by get**OrDefault does not actually change
@@ -703,43 +745,11 @@ function testDefaultValuesForMessages_actualBehavior() {
   var message2 = new proto2.TestDefaultParent();
   var child2 = message2.getChildOrDefault();
   assertNull(message2.getChild());
-  // The parent message returns the same default object
-  assertEquals(child, child2);
-  // You've changed the value of the underlying default message
-  // So changes will be reflected.
-  assertTrue(child2.hasFoo());
-  assertFalse(child2.getFooOrDefault());
-}
 
-function testDefaultValues_bestPractice() {
-  var message = new proto2.TestDefaultParent();
-  // If you're unsure whether or not a message field has
-  // been set this is the best way to get the message.
-  var child = message.hasChild() ? message.getChild() :
-      new proto2.TestDefaultChild();
-  child.setFoo(false);
-  assertFalse(message.hasChild());
-  assertNull(message.getChild());
-  message.setChild(child);
-  assertFalse(message.getChildOrDefault().getFoo());
-
-  var message2 = new proto2.TestDefaultParent();
-  var child2 = message2.getChildOrDefault();
+  // The parent message returns a different object for the default.
   assertNotEquals(child, child2);
+
+  // You've only changed the value of child, so child2 should be unaffected.
+  assertFalse(child2.hasFoo());
   assertTrue(child2.getFooOrDefault());
-}
-
-function testDefaultValuesForMessages_worstPractice() {
-  var message = new proto2.TestDefaultParent();
-  var child = message.getChildOrDefault();
-
-  // This is a terrible idea
-  message.setChild(child);
-  message.getChild().setFoo(false);
-  // Because changes to this message now sync across all default messages
-  var message2 = new proto2.TestDefaultParent();
-  assertFalse(message2.getChildOrDefault().getFooOrDefault());
-  message.getChild().setFoo(true);
-  assertTrue(message2.getChildOrDefault().getFooOrDefault());
-  assertEquals(message.getChild(), message2.getChildOrDefault());
 }

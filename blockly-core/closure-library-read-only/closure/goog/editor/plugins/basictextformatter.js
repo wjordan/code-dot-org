@@ -15,6 +15,7 @@
 /**
  * @fileoverview Functions to style text.
  *
+ * @author nicksantos@google.com (Nick Santos)
  */
 
 goog.provide('goog.editor.plugins.BasicTextFormatter');
@@ -138,7 +139,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.getRange_ = function() {
 
 
 /**
- * @return {Document} The document object associated with the currently active
+ * @return {!Document} The document object associated with the currently active
  *     field.
  * @private
  */
@@ -882,7 +883,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyBgColorManually_ =
       // No Element to work with; make one
       // create a span with a space character inside
       // make the space character invisible using a CSS indent hack
-      parentTag = this.getFieldDomHelper().createDom('span',
+      parentTag = this.getFieldDomHelper().createDom(goog.dom.TagName.SPAN,
           {'style': 'text-indent:-10000px'}, textNode);
       range.replaceContentsWithNode(parentTag);
     }
@@ -1012,6 +1013,15 @@ goog.editor.plugins.BasicTextFormatter.prototype.createLink_ = function(range,
     if (anchors.length) {
       anchor = anchors.pop();
     }
+    var isLikelyUrl = function(a, i, anchors) {
+      return goog.editor.Link.isLikelyUrl(goog.dom.getRawTextContent(a));
+    };
+    if (anchors.length && goog.array.every(anchors, isLikelyUrl)) {
+      for (var i = 0, a; a = anchors[i]; i++) {
+        goog.editor.Link.createNewLinkFromText(a, opt_target);
+      }
+      anchors = null;
+    }
   }
 
   return goog.editor.Link.createNewLink(
@@ -1134,7 +1144,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.removeFontSizeFromStyleAttrs_ =
 /**
  * Apply pre-execCommand fixes for IE.
  * @param {string} command The command to execute.
- * @return {Array.<Node>} Array of nodes to be removed after the execCommand.
+ * @return {!Array<Node>} Array of nodes to be removed after the execCommand.
  *     Will never be longer than 2 elements.
  * @private
  */
@@ -1171,10 +1181,10 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandIEFixes_ =
         }
       }
 
-      var bqThatNeedsDummyDiv =
-          bq || goog.dom.getAncestorByTagNameAndClass(parent, 'BLOCKQUOTE');
+      var bqThatNeedsDummyDiv = bq || goog.dom.getAncestorByTagNameAndClass(
+          parent, goog.dom.TagName.BLOCKQUOTE);
       if (bqThatNeedsDummyDiv) {
-        endDiv = dh.createDom('div', {style: 'height:0'});
+        endDiv = dh.createDom(goog.dom.TagName.DIV, {style: 'height:0'});
         goog.dom.appendChild(bqThatNeedsDummyDiv, endDiv);
         toRemove.push(endDiv);
 
@@ -1238,7 +1248,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandIEFixes_ =
         }
       }
 
-      endDiv = dh.createDom('div', {style: 'height:0'});
+      endDiv = dh.createDom(goog.dom.TagName.DIV, {style: 'height:0'});
       goog.dom.appendChild(field, endDiv);
       toRemove.push(endDiv);
     }
@@ -1297,7 +1307,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.fixSafariLists_ = function() {
       var range = node.ownerDocument.createRange();
       range.setStartAfter(previousElementSibling);
       range.setEndBefore(node);
-      if (!goog.string.isEmpty(range.toString())) {
+      if (!goog.string.isEmptyOrWhitespace(range.toString())) {
         return;
       }
       // Make sure both are lists of the same type (ordered or unordered)
@@ -1351,8 +1361,8 @@ goog.editor.plugins.BasicTextFormatter.prototype.fixIELists_ = function() {
   var range = this.getRange_();
   var container = range && range.getContainer();
   while (container &&
-         container.tagName != goog.dom.TagName.UL &&
-         container.tagName != goog.dom.TagName.OL) {
+         /** @type {!Element} */ (container).tagName != goog.dom.TagName.UL &&
+         /** @type {!Element} */ (container).tagName != goog.dom.TagName.OL) {
     container = container.parentNode;
   }
   if (container) {
@@ -1362,9 +1372,11 @@ goog.editor.plugins.BasicTextFormatter.prototype.fixIELists_ = function() {
   }
   if (!container) return;
   var lists = goog.array.toArray(
-      container.getElementsByTagName(goog.dom.TagName.UL));
+      /** @type {!Element} */ (container).
+          getElementsByTagName(goog.dom.TagName.UL));
   goog.array.extend(lists, goog.array.toArray(
-      container.getElementsByTagName(goog.dom.TagName.OL)));
+      /** @type {!Element} */ (container).
+          getElementsByTagName(goog.dom.TagName.OL)));
   // Fix the lists
   goog.array.forEach(lists, function(node) {
     var type = node.type;
@@ -1410,7 +1422,7 @@ goog.editor.plugins.BasicTextFormatter.hangingExecCommandWebkit_ = {
 /**
  * Apply pre-execCommand fixes for Safari.
  * @param {string} command The command to execute.
- * @return {Element|undefined} The div added to the field.
+ * @return {!Element|undefined} The div added to the field.
  * @private
  */
 goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandSafariFixes_ =
@@ -1425,7 +1437,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandSafariFixes_ =
     // because then it would align them too. So in this case, it will
     // enclose the current selection in a block node.
     div = this.getFieldDomHelper().createDom(
-        'div', {'style': 'height: 0'}, 'x');
+        goog.dom.TagName.DIV, {'style': 'height: 0'}, 'x');
     goog.dom.appendChild(this.getFieldObject().getElement(), div);
   }
 
@@ -1435,7 +1447,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandSafariFixes_ =
     // Add a new div at the beginning of the field.
     var field = this.getFieldObject().getElement();
     div = this.getFieldDomHelper().createDom(
-        'div', {'style': 'height: 0'}, 'x');
+        goog.dom.TagName.DIV, {'style': 'height: 0'}, 'x');
     field.insertBefore(div, field.firstChild);
   }
 
@@ -1459,7 +1471,7 @@ goog.editor.plugins.BasicTextFormatter.prototype.applyExecCommandGeckoFixes_ =
     var range = this.getRange_();
     var startNode = range.getStartNode();
     if (range.isCollapsed() && startNode &&
-        startNode.tagName == goog.dom.TagName.BODY) {
+        /** @type {!Element} */ (startNode).tagName == goog.dom.TagName.BODY) {
       var startOffset = range.getStartOffset();
       var childNode = startNode.childNodes[startOffset];
       if (childNode && childNode.tagName == goog.dom.TagName.BR) {

@@ -52,6 +52,52 @@ goog.labs.net.webChannel.BaseTestChannel = function(channel, channelDebug) {
    * @private {!goog.labs.net.webChannel.WebChannelDebug}
    */
   this.channelDebug_ = channelDebug;
+
+  /**
+   * Extra HTTP headers to add to all the requests sent to the server.
+   * @private {Object}
+   */
+  this.extraHeaders_ = null;
+
+  /**
+   * The test request.
+   * @private {goog.labs.net.webChannel.ChannelRequest}
+   */
+  this.request_ = null;
+
+  /**
+   * Whether we have received the first result as an intermediate result. This
+   * helps us determine whether we're behind a buffering proxy.
+   * @private {boolean}
+   */
+  this.receivedIntermediateResult_ = false;
+
+  /**
+   * The relative path for test requests.
+   * @private {?string}
+   */
+  this.path_ = null;
+
+  /**
+   * The last status code received.
+   * @private {number}
+   */
+  this.lastStatusCode_ = -1;
+
+  /**
+   * A subdomain prefix for using a subdomain in IE for the backchannel
+   * requests.
+   * @private {?string}
+   */
+  this.hostPrefix_ = null;
+
+  /**
+   * The effective client protocol as indicated by the initial handshake
+   * response via the x-client-wire-protocol header.
+   *
+   * @private {?string}
+   */
+  this.clientProtocol_ = null;
 };
 
 
@@ -61,92 +107,6 @@ var WebChannelDebug = goog.labs.net.webChannel.WebChannelDebug;
 var ChannelRequest = goog.labs.net.webChannel.ChannelRequest;
 var requestStats = goog.labs.net.webChannel.requestStats;
 var Channel = goog.labs.net.webChannel.Channel;
-
-
-/**
- * Extra HTTP headers to add to all the requests sent to the server.
- * @type {Object}
- * @private
- */
-BaseTestChannel.prototype.extraHeaders_ = null;
-
-
-/**
- * The test request.
- * @type {ChannelRequest}
- * @private
- */
-BaseTestChannel.prototype.request_ = null;
-
-
-/**
- * Whether we have received the first result as an intermediate result. This
- * helps us determine whether we're behind a buffering proxy.
- * @type {boolean}
- * @private
- */
-BaseTestChannel.prototype.receivedIntermediateResult_ = false;
-
-
-/**
- * The time when the test request was started. We use timing in IE as
- * a heuristic for whether we're behind a buffering proxy.
- * @type {?number}
- * @private
- */
-BaseTestChannel.prototype.startTime_ = null;
-
-
-/**
- * The time for of the first result part. We use timing in IE as a
- * heuristic for whether we're behind a buffering proxy.
- * @type {?number}
- * @private
- */
-BaseTestChannel.prototype.firstTime_ = null;
-
-
-/**
- * The time for of the last result part. We use timing in IE as a
- * heuristic for whether we're behind a buffering proxy.
- * @type {?number}
- * @private
- */
-BaseTestChannel.prototype.lastTime_ = null;
-
-
-/**
- * The relative path for test requests.
- * @type {?string}
- * @private
- */
-BaseTestChannel.prototype.path_ = null;
-
-
-/**
- * The state of the state machine for this object.
- *
- * @type {?number}
- * @private
- */
-BaseTestChannel.prototype.state_ = null;
-
-
-/**
- * The last status code received.
- * @type {number}
- * @private
- */
-BaseTestChannel.prototype.lastStatusCode_ = -1;
-
-
-/**
- * A subdomain prefix for using a subdomain in IE for the backchannel
- * requests.
- * @type {?string}
- * @private
- */
-BaseTestChannel.prototype.hostPrefix_ = null;
 
 
 /**
@@ -170,13 +130,11 @@ BaseTestChannel.State_ = {
 
 
 /**
- * Time between chunks in the test connection that indicates that we
- * are not behind a buffering proxy. This value should be less than or
- * equals to the time between chunks sent from the server.
- * @type {number}
- * @private
+ * The state of the state machine for this object.
+ *
+ * @private {?BaseTestChannel.State_}
  */
-BaseTestChannel.MIN_TIME_EXPECTED_BETWEEN_DATA_ = 500;
+BaseTestChannel.prototype.state_ = null;
 
 
 /**
@@ -199,7 +157,6 @@ BaseTestChannel.prototype.connect = function(path) {
   var sendDataUri = this.channel_.getForwardChannelUri(this.path_);
 
   requestStats.notifyStatEvent(requestStats.Stat.TEST_STAGE_ONE_START);
-  this.startTime_ = goog.now();
 
   // If the channel already has the result of the handshake, then skip it.
   var handshakeResult = this.channel_.getConnectionState().handshakeResult;
@@ -254,14 +211,9 @@ BaseTestChannel.prototype.checkBufferingProxy_ = function() {
       /** @type {string} */ (this.path_));
 
   requestStats.notifyStatEvent(requestStats.Stat.TEST_STAGE_TWO_START);
-  if (!ChannelRequest.supportsXhrStreaming()) {
-    recvDataUri.setParameterValues('TYPE', 'html');
-    this.request_.tridentGet(recvDataUri, Boolean(this.hostPrefix_));
-  } else {
-    recvDataUri.setParameterValues('TYPE', 'xmlhttp');
-    this.request_.xmlHttpGet(recvDataUri, false /** decodeChunks */,
-        this.hostPrefix_, false /** opt_noClose */);
-  }
+  recvDataUri.setParameterValues('TYPE', 'xmlhttp');
+  this.request_.xmlHttpGet(recvDataUri, false /** decodeChunks */,
+      this.hostPrefix_, false /** opt_noClose */);
 };
 
 
@@ -326,14 +278,12 @@ BaseTestChannel.prototype.onRequestData = function(req, responseText) {
   } else if (this.state_ == BaseTestChannel.State_.CONNECTION_TESTING) {
     if (this.receivedIntermediateResult_) {
       requestStats.notifyStatEvent(requestStats.Stat.TEST_STAGE_TWO_DATA_TWO);
-      this.lastTime_ = goog.now();
     } else {
       // '11111' is used instead of '1' to prevent a small amount of buffering
       // by Safari.
       if (responseText == '11111') {
         requestStats.notifyStatEvent(requestStats.Stat.TEST_STAGE_TWO_DATA_ONE);
         this.receivedIntermediateResult_ = true;
-        this.firstTime_ = goog.now();
         if (this.checkForEarlyNonBuffered_()) {
           // If early chunk detection is on, and we passed the tests,
           // assume HTTP_OK, cancel the test and turn on noproxy mode.
@@ -347,7 +297,6 @@ BaseTestChannel.prototype.onRequestData = function(req, responseText) {
       } else {
         requestStats.notifyStatEvent(
             requestStats.Stat.TEST_STAGE_TWO_DATA_BOTH);
-        this.firstTime_ = this.lastTime_ = goog.now();
         this.receivedIntermediateResult_ = false;
       }
     }
@@ -358,7 +307,7 @@ BaseTestChannel.prototype.onRequestData = function(req, responseText) {
 /**
  * Callback from ChannelRequest that indicates a request has completed.
  *
- * @param {ChannelRequest} req The request object.
+ * @param {!ChannelRequest} req The request object.
  * @override
  */
 BaseTestChannel.prototype.onRequestComplete = function(req) {
@@ -378,29 +327,17 @@ BaseTestChannel.prototype.onRequestComplete = function(req) {
   }
 
   if (this.state_ == BaseTestChannel.State_.INIT) {
+    this.recordClientProtocol_(req);
+    this.state_ = BaseTestChannel.State_.CONNECTION_TESTING;
+
     this.channelDebug_.debug(
         'TestConnection: request complete for initial check');
-    this.state_ = BaseTestChannel.State_.CONNECTION_TESTING;
+
     this.checkBufferingProxy_();
   } else if (this.state_ == BaseTestChannel.State_.CONNECTION_TESTING) {
     this.channelDebug_.debug('TestConnection: request complete for stage 2');
-    var goodConn = false;
 
-    if (!ChannelRequest.supportsXhrStreaming()) {
-      // we always get Trident responses in separate calls to
-      // onRequestData, so we have to check the time they came
-      var ms = this.lastTime_ - this.firstTime_;
-      if (ms < 200) {
-        // TODO: need to empirically verify that this number is OK
-        // for slow computers
-        goodConn = false;
-      } else {
-        goodConn = true;
-      }
-    } else {
-      goodConn = this.receivedIntermediateResult_;
-    }
-
+    var goodConn = this.receivedIntermediateResult_;
     if (goodConn) {
       this.channelDebug_.debug(
           'Test connection succeeded; using streaming connection');
@@ -413,6 +350,30 @@ BaseTestChannel.prototype.onRequestComplete = function(req) {
       this.channel_.testConnectionFinished(this, false);
     }
   }
+};
+
+
+/**
+ * Record the client protocol header from the initial handshake response.
+ *
+ * @param {!ChannelRequest} req The request object.
+ * @private
+ */
+BaseTestChannel.prototype.recordClientProtocol_ = function(req) {
+  var xmlHttp = req.getXhr();
+  if (xmlHttp) {
+    var protocolHeader = xmlHttp.getResponseHeader('x-client-wire-protocol');
+    this.clientProtocol_ = protocolHeader ? protocolHeader : null;
+  }
+};
+
+
+/**
+ * @return {?string} The client protocol as recorded with the init handshake
+ *     request.
+ */
+BaseTestChannel.prototype.getClientProtocol = function() {
+  return this.clientProtocol_;
 };
 
 
@@ -449,14 +410,7 @@ BaseTestChannel.prototype.isActive = function() {
  * @private
  */
 BaseTestChannel.prototype.checkForEarlyNonBuffered_ = function() {
-  var ms = this.firstTime_ - this.startTime_;
-
-  // we always get Trident responses in separate calls to
-  // onRequestData, so we have to check the time that the first came in
-  // and verify that the data arrived before the second portion could
-  // have been sent. For all other browser's we skip the timing test.
-  return ChannelRequest.supportsXhrStreaming() ||
-      ms < BaseTestChannel.MIN_TIME_EXPECTED_BETWEEN_DATA_;
+  return ChannelRequest.supportsXhrStreaming();
 };
 
 

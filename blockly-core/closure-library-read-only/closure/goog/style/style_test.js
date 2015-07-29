@@ -16,27 +16,25 @@
  * @fileoverview Shared unit tests for styles.
  */
 
-/** @suppress {extraProvide} */
 goog.provide('goog.style_test');
 
 goog.require('goog.array');
 goog.require('goog.color');
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.events.BrowserEvent');
+goog.require('goog.labs.userAgent.util');
 goog.require('goog.math.Box');
 goog.require('goog.math.Coordinate');
 goog.require('goog.math.Rect');
 goog.require('goog.math.Size');
 goog.require('goog.object');
-goog.require('goog.string');
 goog.require('goog.style');
 goog.require('goog.testing.ExpectedFailures');
-goog.require('goog.testing.PropertyReplacer');
+goog.require('goog.testing.MockUserAgent');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent');
-goog.require('goog.userAgent.product');
-goog.require('goog.userAgent.product.isVersion');
 goog.require('goog.userAgentTestUtil');
 goog.require('goog.userAgentTestUtil.UserAgents');
 
@@ -49,8 +47,7 @@ var isBorderBox = goog.dom.isCss1CompatMode() ?
 var EPSILON = 2;
 var expectedFailures = new goog.testing.ExpectedFailures();
 var $ = goog.dom.getElement;
-var propertyReplacer = new goog.testing.PropertyReplacer();
-
+var mockUserAgent;
 
 function setUpPage() {
   var viewportSize = goog.dom.getViewportSize();
@@ -68,6 +65,9 @@ function setUpPage() {
 
 function setUp() {
   window.scrollTo(0, 0);
+  goog.userAgentTestUtil.reinitializeUserAgent();
+  mockUserAgent = new goog.testing.MockUserAgent();
+  mockUserAgent.install();
 }
 
 function tearDown() {
@@ -78,8 +78,10 @@ function tearDown() {
   var testViewport = goog.dom.getElement('test-viewport');
   testViewport.setAttribute('style', '');
   testViewport.innerHTML = '';
-  propertyReplacer.reset();
-  goog.userAgentTestUtil.reinitializeUserAgent();
+  goog.dispose(mockUserAgent);
+
+  // Prevent multiple vendor prefixed mock elements from poisoning the cache.
+  goog.style.styleNameCache_ = {};
 }
 
 function testSetStyle() {
@@ -132,8 +134,9 @@ function testGetStyleMsFilter() {
   // Element with -ms-filter style set.
   var e = goog.dom.getElement('msFilter');
 
-  if (goog.userAgent.IE && goog.userAgent.isDocumentModeOrHigher(8)) {
-    // Only IE8 supports -ms-filter and returns it as value for the "filter"
+  if (goog.userAgent.IE && goog.userAgent.isDocumentModeOrHigher(8) &&
+      !goog.userAgent.isDocumentModeOrHigher(10)) {
+    // Only IE8/9 supports -ms-filter and returns it as value for the "filter"
     // property. When in compatibility mode, -ms-filter is not supported
     // and IE8 behaves as IE7 so the other case will apply.
     assertEquals('alpha(opacity=0)', goog.style.getStyle(e, 'filter'));
@@ -147,7 +150,7 @@ function testGetStyleFilter() {
   // Element with filter style set.
   var e = goog.dom.getElement('filter');
 
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.userAgent.isDocumentModeOrHigher(10)) {
     // Filter supported.
     assertEquals('alpha(opacity=0)', goog.style.getStyle(e, 'filter'));
   } else {
@@ -159,9 +162,15 @@ function testGetComputedStyleMsFilter() {
   // Element with -ms-filter style set.
   var e = goog.dom.getElement('msFilter');
 
-  if (goog.userAgent.IE) {
-    // IE always returns empty string for computed styles.
-    assertEquals('', goog.style.getComputedStyle(e, 'filter'));
+  if (goog.userAgent.IE && !goog.userAgent.isDocumentModeOrHigher(10)) {
+    if (goog.userAgent.isDocumentModeOrHigher(9)) {
+      // IE 9 returns the value.
+      assertEquals('alpha(opacity=0)',
+          goog.style.getComputedStyle(e, 'filter'));
+    } else {
+      // Older IE always returns empty string for computed styles.
+      assertEquals('', goog.style.getComputedStyle(e, 'filter'));
+    }
   } else {
     // Non IE returns 'none' for filter as it is an SVG property
     assertEquals('none', goog.style.getComputedStyle(e, 'filter'));
@@ -172,9 +181,15 @@ function testGetComputedStyleFilter() {
   // Element with filter style set.
   var e = goog.dom.getElement('filter');
 
-  if (goog.userAgent.IE) {
-    // IE always returns empty string for computed styles.
-    assertEquals('', goog.style.getComputedStyle(e, 'filter'));
+  if (goog.userAgent.IE && !goog.userAgent.isDocumentModeOrHigher(10)) {
+    if (goog.userAgent.isDocumentModeOrHigher(9)) {
+      // IE 9 returns the value.
+      assertEquals('alpha(opacity=0)',
+          goog.style.getComputedStyle(e, 'filter'));
+    } else {
+      // Older IE always returns empty string for computed styles.
+      assertEquals('', goog.style.getComputedStyle(e, 'filter'));
+    }
   } else {
     // Non IE returns 'none' for filter as it is an SVG property
     assertEquals('none', goog.style.getComputedStyle(e, 'filter'));
@@ -202,7 +217,8 @@ function testGetComputedPosition() {
                goog.style.getComputedPosition($('position-unset')));
   assertEquals('position:relative in style attribute', 'relative',
                goog.style.getComputedPosition($('style-position-relative')));
-  if (goog.userAgent.IE && !goog.dom.isCss1CompatMode()) {
+  if (goog.userAgent.IE && !goog.dom.isCss1CompatMode() &&
+      !goog.userAgent.isVersionOrHigher(10)) {
     assertEquals('position:fixed in style attribute', 'static',
         goog.style.getComputedPosition($('style-position-fixed')));
   } else {
@@ -310,7 +326,7 @@ function testSetPosition() {
 }
 
 function testGetClientPositionAbsPositionElement() {
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '100px';
   div.style.top = '200px';
@@ -321,11 +337,11 @@ function testGetClientPositionAbsPositionElement() {
 }
 
 function testGetClientPositionNestedElements() {
-  var innerDiv = goog.dom.createDom('DIV');
+  var innerDiv = goog.dom.createDom(goog.dom.TagName.DIV);
   innerDiv.style.position = 'relative';
   innerDiv.style.left = '-10px';
   innerDiv.style.top = '-10px';
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '150px';
   div.style.top = '250px';
@@ -337,7 +353,7 @@ function testGetClientPositionNestedElements() {
 }
 
 function testGetClientPositionOfOffscreenElement() {
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '2000px';
   div.style.top = '2000px';
@@ -378,7 +394,7 @@ function testGetClientPositionOfOffscreenElement() {
 }
 
 function testGetClientPositionOfOrphanElement() {
-  var orphanElem = document.createElement('DIV');
+  var orphanElem = document.createElement(goog.dom.TagName.DIV);
   var pos = goog.style.getClientPosition(orphanElem);
   assertEquals(0, pos.x);
   assertEquals(0, pos.y);
@@ -409,6 +425,20 @@ function testGetClientPositionTouchEvent() {
   assertEquals(200, pos.y);
 }
 
+function testGetClientPositionEmptyTouchList() {
+  var mockTouchEvent = {};
+
+  mockTouchEvent.clientX = 100;
+  mockTouchEvent.clientY = 200;
+
+  mockTouchEvent.targetTouches = [];
+  mockTouchEvent.touches = [];
+
+  var pos = goog.style.getClientPosition(mockTouchEvent);
+  assertEquals(100, pos.x);
+  assertEquals(200, pos.y);
+}
+
 function testGetClientPositionAbstractedTouchEvent() {
   var e = new goog.events.BrowserEvent();
   e.event_ = {};
@@ -424,7 +454,7 @@ function testGetClientPositionAbstractedTouchEvent() {
 }
 
 function testGetPageOffsetAbsPositionedElement() {
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '100px';
   div.style.top = '200px';
@@ -435,11 +465,11 @@ function testGetPageOffsetAbsPositionedElement() {
 }
 
 function testGetPageOffsetNestedElements() {
-  var innerDiv = goog.dom.createDom('DIV');
+  var innerDiv = goog.dom.createDom(goog.dom.TagName.DIV);
   innerDiv.style.position = 'relative';
   innerDiv.style.left = '-10px';
   innerDiv.style.top = '-10px';
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '150px';
   div.style.top = '250px';
@@ -455,7 +485,7 @@ function testGetPageOffsetWithBodyPadding() {
   document.body.style.padding = '60px';
   document.body.style.borderWidth = '70px';
   try {
-    var div = goog.dom.createDom('DIV');
+    var div = goog.dom.createDom(goog.dom.TagName.DIV);
     div.style.position = 'absolute';
     div.style.left = '100px';
     div.style.top = '200px';
@@ -481,7 +511,7 @@ function testGetPageOffsetWithDocumentElementPadding() {
   document.documentElement.style.padding = '60px';
   document.documentElement.style.borderWidth = '70px';
   try {
-    var div = goog.dom.createDom('DIV');
+    var div = goog.dom.createDom(goog.dom.TagName.DIV);
     div.style.position = 'absolute';
     div.style.left = '100px';
     div.style.top = '200px';
@@ -510,7 +540,7 @@ function testGetPageOffsetWithDocumentElementPadding() {
 }
 
 function testGetPageOffsetElementOffscreen() {
-  var div = goog.dom.createDom('DIV');
+  var div = goog.dom.createDom(goog.dom.TagName.DIV);
   div.style.position = 'absolute';
   div.style.left = '10000px';
   div.style.top = '20000px';
@@ -553,7 +583,7 @@ function testGetPageOffsetFixedPositionElements() {
   // position:fixed is not supported in IE before version 7
   if (!goog.userAgent.IE || !goog.userAgent.isVersionOrHigher('6')) {
     // Test with a position fixed element
-    var div = goog.dom.createDom('DIV');
+    var div = goog.dom.createDom(goog.dom.TagName.DIV);
     div.style.position = 'fixed';
     div.style.top = '10px';
     div.style.left = '10px';
@@ -563,8 +593,8 @@ function testGetPageOffsetFixedPositionElements() {
     assertEquals(10, pos.y);
 
     // Test with a position fixed element as parent
-    var innerDiv = goog.dom.createDom('DIV');
-    div = goog.dom.createDom('DIV');
+    var innerDiv = goog.dom.createDom(goog.dom.TagName.DIV);
+    div = goog.dom.createDom(goog.dom.TagName.DIV);
     div.style.position = 'fixed';
     div.style.top = '10px';
     div.style.left = '10px';
@@ -582,7 +612,7 @@ function testGetPositionTolerantToNoDocumentElementBorder() {
   // 2-pixel offset.  Ensure that we're correctly compensating for both cases.
   try {
     document.documentElement.style.borderWidth = '0';
-    var div = goog.dom.createDom('DIV');
+    var div = goog.dom.createDom(goog.dom.TagName.DIV);
     div.style.position = 'absolute';
     div.style.left = '100px';
     div.style.top = '200px';
@@ -729,12 +759,12 @@ function testGetSize() {
   assertNotEquals(0, dims.width);
   assertNotEquals(0, dims.height);
 
-  el = goog.dom.getElementsByTagNameAndClass('html')[0];
+  el = goog.dom.getElementsByTagNameAndClass(goog.dom.TagName.HTML)[0];
   dims = goog.style.getSize(el);
   assertNotEquals(0, dims.width);
   assertNotEquals(0, dims.height);
 
-  el = goog.dom.getElementsByTagNameAndClass('body')[0];
+  el = goog.dom.getElementsByTagNameAndClass(goog.dom.TagName.BODY)[0];
   dims = goog.style.getSize(el);
   assertNotEquals(0, dims.width);
   assertNotEquals(0, dims.height);
@@ -760,35 +790,30 @@ function testGetSizeSvgElements() {
 
   svgEl.appendChild(el);
 
+  // The bounding size in 1 larger than the SVG element in IE.
+  var expectedWidth = (goog.userAgent.IE) ? 33 : 32;
+  var expectedHeight = (goog.userAgent.IE) ? 22 : 21;
+
   var dims = goog.style.getSize(el);
-  assertEquals(32, dims.width);
-  assertRoughlyEquals(21, dims.height, 0.01);
+  assertEquals(expectedWidth, dims.width);
+  assertRoughlyEquals(expectedHeight, dims.height, 0.01);
 
   dims = goog.style.getSize(svgEl);
-  if (goog.userAgent.WEBKIT) {
-    // The size of the <svg> will be the viewport size on WebKit browsers.
-    assertTrue(dims.width >= 32);
-    assertTrue(dims.height >= 21);
-  } else {
-    assertEquals(32, dims.width);
-    assertRoughlyEquals(21, dims.height, 0.01);
-  }
+  // The size of the <svg> will be the viewport size on all browsers. This used
+  // to not be true for Firefox, but they fixed the glitch in Firefox 33.
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=530985
+  assertTrue(dims.width >= expectedWidth);
+  assertTrue(dims.height >= expectedHeight);
 
   el.style.visibility = 'none';
 
   dims = goog.style.getSize(el);
-  assertEquals(32, dims.width);
-  assertRoughlyEquals(21, dims.height, 0.01);
+  assertEquals(expectedWidth, dims.width);
+  assertRoughlyEquals(expectedHeight, dims.height, 0.01);
 
   dims = goog.style.getSize(svgEl);
-  if (goog.userAgent.WEBKIT) {
-    // The size of the <svg> will be the viewport size on WebKit browsers.
-    assertTrue(dims.width >= 32);
-    assertTrue(dims.height >= 21);
-  } else {
-    assertEquals(32, dims.width);
-    assertRoughlyEquals(21, dims.height, 0.01);
-  }
+  assertTrue(dims.width >= expectedWidth);
+  assertTrue(dims.height >= expectedHeight);
 }
 
 function testGetSizeSvgDocument() {
@@ -805,8 +830,13 @@ function testGetSizeSvgDocument() {
   var doc = goog.dom.getFrameContentDocument(frame);
   var rect = doc.getElementById('rect');
   var dims = goog.style.getSize(rect);
-  assertEquals(50, dims.width);
-  assertEquals(50, dims.height);
+  if (!goog.userAgent.IE) {
+    assertEquals(50, dims.width);
+    assertEquals(50, dims.height);
+  } else {
+    assertEquals(51, dims.width);
+    assertEquals(51, dims.height);
+  }
 }
 
 function testGetSizeInlineBlock() {
@@ -862,7 +892,7 @@ function hasWebkitTransform() {
 }
 
 function testGetSizeOfOrphanElement() {
-  var orphanElem = document.createElement('DIV');
+  var orphanElem = document.createElement(goog.dom.TagName.DIV);
   var size = goog.style.getSize(orphanElem);
   assertEquals(0, size.width);
   assertEquals(0, size.height);
@@ -891,15 +921,6 @@ function testInstallStyles() {
   var result = goog.style.installStyles(
       '#installTest0 { background-color: rgb(255, 192, 203); }');
 
-  // For some odd reason, the change in computed style does not register on
-  // Chrome 19 unless the style property is touched.  The behavior goes
-  // away again in Chrome 20.
-  // TODO(nnaze): Remove special caseing once we switch the testing image
-  // to Chrome 20 or higher.
-  if (isChrome19()) {
-    el.style.display = '';
-  }
-
   assertColorRgbEquals('rgb(255,192,203)', goog.style.getBackgroundColor(el));
 
   goog.style.uninstallStyles(result);
@@ -912,15 +933,6 @@ function testSetStyles() {
   // Change to pink
   var ss = goog.style.installStyles(
       '#installTest1 { background-color: rgb(255, 192, 203); }');
-
-  // For some odd reason, the change in computed style does not register on
-  // Chrome 19 unless the style property is touched.  The behavior goes
-  // away again in Chrome 20.
-  // TODO(nnaze): Remove special caseing once we switch the testing image
-  // to Chrome 20 or higher.
-  if (isChrome19()) {
-    el.style.display = '';
-  }
 
   assertColorRgbEquals('rgb(255,192,203)', goog.style.getBackgroundColor(el));
 
@@ -935,11 +947,6 @@ function assertColorRgbEquals(expected, actual) {
       goog.color.hexToRgbStyle(goog.color.parse(actual).hex));
 }
 
-function isChrome19() {
-  return goog.userAgent.product.CHROME &&
-         goog.string.startsWith(goog.userAgent.product.VERSION, '19.');
-}
-
 function testIsRightToLeft() {
   assertFalse(goog.style.isRightToLeft($('rtl1')));
   assertTrue(goog.style.isRightToLeft($('rtl2')));
@@ -951,6 +958,45 @@ function testIsRightToLeft() {
   assertFalse(goog.style.isRightToLeft($('rtl8')));
   assertTrue(goog.style.isRightToLeft($('rtl9')));
   assertFalse(goog.style.isRightToLeft($('rtl10')));
+}
+
+function testIsUnselectable() {
+  assertEquals(goog.userAgent.GECKO,
+               goog.style.isUnselectable($('unselectable-gecko')));
+  assertEquals(goog.userAgent.IE || goog.userAgent.OPERA,
+               goog.style.isUnselectable($('unselectable-ie')));
+  assertEquals(goog.userAgent.WEBKIT,
+               goog.style.isUnselectable($('unselectable-webkit')));
+}
+
+function testSetUnselectable() {
+  var el = $('make-unselectable');
+  assertFalse(goog.style.isUnselectable(el));
+
+  function assertDescendantsUnselectable(unselectable) {
+    goog.array.forEach(el.getElementsByTagName('*'), function(descendant) {
+      // Skip MathML or any other elements that do not have a style property.
+      if (descendant.style) {
+        assertEquals(unselectable, goog.style.isUnselectable(descendant));
+      }
+    });
+  }
+
+  goog.style.setUnselectable(el, true);
+  assertTrue(goog.style.isUnselectable(el));
+  assertDescendantsUnselectable(true);
+
+  goog.style.setUnselectable(el, false);
+  assertFalse(goog.style.isUnselectable(el));
+  assertDescendantsUnselectable(false);
+
+  goog.style.setUnselectable(el, true, true);
+  assertTrue(goog.style.isUnselectable(el));
+  assertDescendantsUnselectable(false);
+
+  goog.style.setUnselectable(el, false, true);
+  assertFalse(goog.style.isUnselectable(el));
+  assertDescendantsUnselectable(false);
 }
 
 function testPosWithAbsoluteAndScroll() {
@@ -1214,7 +1260,7 @@ function testGetPaddingBox() {
 }
 
 function testGetPaddingBoxUnattached() {
-  var el = document.createElement('div');
+  var el = document.createElement(goog.dom.TagName.DIV);
   var box = goog.style.getPaddingBox(el);
   if (goog.userAgent.WEBKIT) {
     assertTrue(isNaN(box.top));
@@ -1408,6 +1454,16 @@ function testGetFontFamily() {
   tmpFont = goog.style.getFontFamily($('nested-font'));
   assertEquals('An element with nested content should be unaffected.',
                'Arial',
+               tmpFont);
+  // IE raises an 'Invalid Argument' error when using the moveToElementText
+  // method from the TextRange object with an element that is not attached to
+  // a document.
+  var element = goog.dom.createDom(goog.dom.TagName.SPAN,
+      {style: 'font-family:Times,sans-serif;'}, 'some text');
+  tmpFont = goog.style.getFontFamily(element);
+  assertEquals('Font should be correctly retrieved for element not attached' +
+               ' to a document',
+               'Times',
                tmpFont);
 }
 
@@ -1658,6 +1714,16 @@ function testFramedPageOffset() {
       goog.style.getFramedPageOffset(testElement3, iframeWindow));
   assertCoordinateApprox(500, 500, 2,
       goog.style.getFramedPageOffset(testElement3, iframeWindow2));
+
+  // In IE, if the element is in a frame that's been removed from the DOM and
+  // relativeWin is not that frame's contentWindow, the contentWindow's parent
+  // reference points to itself. We want to guarantee that we don't fall into
+  // an infinite loop.
+  var iframeParent = iframe.parentElement;
+  iframeParent.removeChild(iframe);
+  // We don't check the value returned as it differs by browser. 0,0 for Chrome
+  // and FF. IE returns 30000 or 30198 for x in IE8-9 and 300 in IE10-11
+  goog.style.getFramedPageOffset(testElement2, window);
 }
 
 
@@ -1774,7 +1840,7 @@ function testGetVisibleRectForElement() {
   visible = goog.style.getVisibleRectForElement(el);
 
   var iframeViewportSize = goog.dom.getDomHelper(el).getViewportSize();
-  // NOTE(user): For iframe, the clipping viewport is always the iframe
+  // NOTE(chrishenry): For iframe, the clipping viewport is always the iframe
   // viewport, and not the actual browser viewport.
   assertNotNull(visible);
   assertEquals(0, visible.top);
@@ -1786,7 +1852,7 @@ function testGetVisibleRectForElement() {
 function testGetVisibleRectForElementWithBodyScrolled() {
   var container = goog.dom.getElement('test-visible2');
   var dom = goog.dom.getDomHelper(container);
-  var el = dom.createDom('div', undefined, 'Test');
+  var el = dom.createDom(goog.dom.TagName.DIV, undefined, 'Test');
   el.style.position = 'absolute';
   dom.append(container, el);
 
@@ -1849,8 +1915,8 @@ function testGetVisibleRectForElementWithNestedAreaAndNonOffsetAncestor() {
 
   var container = goog.dom.getElement('test-visible2');
   var dom = goog.dom.getDomHelper(container);
-  var container2 = dom.createDom('div');
-  var el = dom.createDom('div', undefined, 'Test');
+  var container2 = dom.createDom(goog.dom.TagName.DIV);
+  var el = dom.createDom(goog.dom.TagName.DIV, undefined, 'Test');
   el.style.position = 'absolute';
   dom.append(container, container2);
   dom.append(container2, el);
@@ -1914,8 +1980,8 @@ function testGetVisibleRectForElementWithNestedAreaAndNonOffsetAncestor() {
 function testGetVisibleRectForElementInsideNestedScrollableArea() {
   var container = goog.dom.getElement('test-visible2');
   var dom = goog.dom.getDomHelper(container);
-  var container2 = dom.createDom('div');
-  var el = dom.createDom('div', undefined, 'Test');
+  var container2 = dom.createDom(goog.dom.TagName.DIV);
+  var el = dom.createDom(goog.dom.TagName.DIV, undefined, 'Test');
   el.style.position = 'absolute';
   dom.append(container, container2);
   dom.append(container2, el);
@@ -1981,20 +2047,6 @@ function testGetVisibleRectForElementInsideNestedScrollableArea() {
   goog.style.setStyle(container2, 'top', '10000px');
   goog.style.setStyle(container2, 'left', '10000px');
   assertNull(goog.style.getVisibleRectForElement(el));
-}
-
-function testGeckoMacOrX11RoundPosition() {
-  if ((goog.userAgent.MAC || goog.userAgent.X11) && goog.userAgent.GECKO &&
-      goog.userAgent.isVersionOrHigher('1.9')) {
-
-    var pos = new goog.math.Coordinate(1.5, 1.4);
-    var el = document.createElement('div');
-    goog.style.setPosition(el, pos);
-    assertEquals('The left position should have been rounded',
-                 '2px', el.style.left);
-    assertEquals('The top position should have been rounded',
-                 '1px', el.style.top);
-  }
 }
 
 function testScrollIntoContainerViewQuirks() {
@@ -2089,6 +2141,23 @@ function testOverflowOffsetParent() {
   assertEquals(parent, goog.style.getOffsetParent(child));
 }
 
+function testShadowDomOffsetParent() {
+  // Ignore browsers that don't support shadowDOM.
+  if (!document.createShadowRoot) {
+    return;
+  }
+
+  var parent = goog.dom.createDom(goog.dom.TagName.DIV);
+  parent.style.position = 'relative';
+  var host = goog.dom.createDom(goog.dom.TagName.DIV);
+  goog.dom.appendChild(parent, host);
+  var root = host.createShadowRoot();
+  var child = goog.dom.createDom(goog.dom.TagName.DIV);
+  goog.dom.appendChild(root, child);
+
+  assertEquals(parent, goog.style.getOffsetParent(child));
+}
+
 function testGetViewportPageOffset() {
   expectedFailures.expectFailureFor(
       goog.userAgent.IE && !goog.userAgent.isVersionOrHigher(9),
@@ -2115,9 +2184,15 @@ function testGetViewportPageOffset() {
 function testGetsTranslation() {
   var element = document.getElementById('translation');
 
-  expectedFailures.expectFailureFor(
-      goog.userAgent.IE && !goog.userAgent.product.isVersion(9),
-      'CSS transforms were only introduced in IE9');
+  if (goog.userAgent.IE) {
+    if (!goog.userAgent.isDocumentModeOrHigher(9) ||
+        (!goog.dom.isCss1CompatMode() &&
+            !goog.userAgent.isDocumentModeOrHigher(10))) {
+      // 'CSS transforms were introduced in IE9, but only in standards mode
+      // later browsers support the translations in quirks mode.
+      return;
+    }
+  }
 
   // First check the element is actually translated, and we haven't missed
   // one of the vendor-specific transform properties
@@ -2125,30 +2200,32 @@ function testGetsTranslation() {
   var translation = goog.style.getCssTranslation(element);
   var expectedTranslation = new goog.math.Coordinate(20, 30);
 
-  expectedFailures.run(function() {
-    assertEquals(30, position.x);
-    assertRoughlyEquals(40, position.y, .1);
-    assertObjectEquals(expectedTranslation, translation);
-  });
+  assertEquals(30, position.x);
+  assertRoughlyEquals(40, position.y, .1);
+  assertObjectEquals(expectedTranslation, translation);
 }
 
 
 /**
  * Test browser detection for a user agent configuration.
- * @param {Array.<number>} expectedAgents Array of expected userAgents.
+ * @param {Array<number>} expectedAgents Array of expected userAgents.
  * @param {string} uaString User agent string.
  * @param {string=} opt_product Navigator product string.
  * @param {string=} opt_vendor Navigator vendor string.
  */
 function assertUserAgent(expectedAgents, uaString, opt_product, opt_vendor) {
-  var mockGlobal = {
-    'navigator': {
-      'userAgent': uaString,
-      'product': opt_product,
-      'vendor': opt_vendor
-    }
+
+  var mockNavigator = {
+    'userAgent': uaString,
+    'product': opt_product,
+    'vendor': opt_vendor
   };
-  propertyReplacer.set(goog, 'global', mockGlobal);
+
+  mockUserAgent.setNavigator(mockNavigator);
+  mockUserAgent.setUserAgentString(uaString);
+
+  // Force User-Agent lib to reread the global userAgent.
+  goog.labs.userAgent.util.setUserAgent(null);
 
   goog.userAgentTestUtil.reinitializeUserAgent();
   for (var ua in goog.userAgentTestUtil.UserAgents) {
@@ -2169,13 +2246,13 @@ function assertUserAgent(expectedAgents, uaString, opt_product, opt_vendor) {
 function testGetVendorStyleNameWebkit() {
   var mockElement = {
     'style': {
-      'WebkitTransform': ''
+      'WebkitTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.WEBKIT], 'WebKit');
-  assertEquals('-webkit-transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+  assertEquals('-webkit-transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2186,15 +2263,15 @@ function testGetVendorStyleNameWebkit() {
 function testGetVendorStyleNameWebkitNoPrefix() {
   var mockElement = {
     'style': {
-      'WebkitTransform': '',
-      'transform': ''
+      'WebkitTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.WEBKIT], 'WebKit');
   assertEquals(
-      'transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+      'transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2205,13 +2282,13 @@ function testGetVendorStyleNameWebkitNoPrefix() {
 function testGetVendorStyleNameGecko() {
   var mockElement = {
     'style': {
-      'MozTransform': ''
+      'MozTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.GECKO], 'Gecko', 'Gecko');
-  assertEquals('-moz-transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+  assertEquals('-moz-transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2222,15 +2299,15 @@ function testGetVendorStyleNameGecko() {
 function testGetVendorStyleNameGeckoNoPrefix() {
   var mockElement = {
     'style': {
-      'MozTransform': '',
-      'transform': ''
+      'MozTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.GECKO], 'Gecko', 'Gecko');
   assertEquals(
-      'transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+      'transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2241,13 +2318,13 @@ function testGetVendorStyleNameGeckoNoPrefix() {
 function testGetVendorStyleNameIE() {
   var mockElement = {
     'style': {
-      'msTransform': ''
+      'msTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.IE], 'MSIE');
-  assertEquals('-ms-transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+  assertEquals('-ms-transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2258,15 +2335,15 @@ function testGetVendorStyleNameIE() {
 function testGetVendorStyleNameIENoPrefix() {
   var mockElement = {
     'style': {
-      'msTransform': '',
-      'transform': ''
+      'msTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.IE], 'MSIE');
   assertEquals(
-      'transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+      'transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2277,13 +2354,13 @@ function testGetVendorStyleNameIENoPrefix() {
 function testGetVendorStyleNameOpera() {
   var mockElement = {
     'style': {
-      'OTransform': ''
+      'OTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.OPERA], 'Opera');
-  assertEquals('-o-transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+  assertEquals('-o-transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2294,15 +2371,15 @@ function testGetVendorStyleNameOpera() {
 function testGetVendorStyleNameOperaNoPrefix() {
   var mockElement = {
     'style': {
-      'OTransform': '',
-      'transform': ''
+      'OTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.OPERA], 'Opera');
   assertEquals(
-      'transform',
-      goog.style.getVendorStyleName_(mockElement, 'transform'));
+      'transform-origin',
+      goog.style.getVendorStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2313,13 +2390,13 @@ function testGetVendorStyleNameOperaNoPrefix() {
 function testGetVendorJsStyleNameWebkit() {
   var mockElement = {
     'style': {
-      'WebkitTransform': ''
+      'WebkitTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.WEBKIT], 'WebKit');
-  assertEquals('WebkitTransform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+  assertEquals('WebkitTransformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2330,15 +2407,15 @@ function testGetVendorJsStyleNameWebkit() {
 function testGetVendorJsStyleNameWebkitNoPrefix() {
   var mockElement = {
     'style': {
-      'WebkitTransform': '',
-      'transform': ''
+      'WebkitTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.WEBKIT], 'WebKit');
   assertEquals(
-      'transform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+      'transformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2349,13 +2426,13 @@ function testGetVendorJsStyleNameWebkitNoPrefix() {
 function testGetVendorJsStyleNameGecko() {
   var mockElement = {
     'style': {
-      'MozTransform': ''
+      'MozTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.GECKO], 'Gecko', 'Gecko');
-  assertEquals('MozTransform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+  assertEquals('MozTransformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2366,15 +2443,15 @@ function testGetVendorJsStyleNameGecko() {
 function testGetVendorJsStyleNameGeckoNoPrefix() {
   var mockElement = {
     'style': {
-      'MozTransform': '',
-      'transform': ''
+      'MozTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.GECKO], 'Gecko', 'Gecko');
   assertEquals(
-      'transform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+      'transformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2385,13 +2462,13 @@ function testGetVendorJsStyleNameGeckoNoPrefix() {
 function testGetVendorJsStyleNameIE() {
   var mockElement = {
     'style': {
-      'msTransform': ''
+      'msTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.IE], 'MSIE');
-  assertEquals('msTransform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+  assertEquals('msTransformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2402,15 +2479,15 @@ function testGetVendorJsStyleNameIE() {
 function testGetVendorJsStyleNameIENoPrefix() {
   var mockElement = {
     'style': {
-      'msTransform': '',
-      'transform': ''
+      'msTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.IE], 'MSIE');
   assertEquals(
-      'transform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+      'transformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2421,13 +2498,13 @@ function testGetVendorJsStyleNameIENoPrefix() {
 function testGetVendorJsStyleNameOpera() {
   var mockElement = {
     'style': {
-      'OTransform': ''
+      'OTransformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.OPERA], 'Opera');
-  assertEquals('OTransform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+  assertEquals('OTransformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 
@@ -2438,15 +2515,15 @@ function testGetVendorJsStyleNameOpera() {
 function testGetVendorJsStyleNameOperaNoPrefix() {
   var mockElement = {
     'style': {
-      'OTransform': '',
-      'transform': ''
+      'OTransformOrigin': '',
+      'transformOrigin': ''
     }
   };
 
   assertUserAgent([goog.userAgentTestUtil.UserAgents.OPERA], 'Opera');
   assertEquals(
-      'transform',
-      goog.style.getVendorJsStyleName_(mockElement, 'transform'));
+      'transformOrigin',
+      goog.style.getVendorJsStyleName_(mockElement, 'transform-origin'));
 }
 
 

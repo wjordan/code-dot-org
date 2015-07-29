@@ -21,6 +21,7 @@
 goog.provide('goog.ui.MenuButtonRenderer');
 
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.style');
 goog.require('goog.ui.CustomButtonRenderer');
 goog.require('goog.ui.INLINE_BLOCK_CLASSNAME');
@@ -152,11 +153,11 @@ goog.ui.MenuButtonRenderer.prototype.createCaption = function(content, dom) {
  *     to wrap in a box.
  * @param {string} cssClass The CSS class for the renderer.
  * @param {goog.dom.DomHelper} dom DOM helper, used for document interaction.
- * @return {Element} Caption element.
+ * @return {!Element} Caption element.
  */
 goog.ui.MenuButtonRenderer.wrapCaption = function(content, cssClass, dom) {
   return dom.createDom(
-      'div',
+      goog.dom.TagName.DIV,
       goog.ui.INLINE_BLOCK_CLASSNAME + ' ' +
           goog.getCssName(cssClass, 'caption'),
       content);
@@ -174,7 +175,7 @@ goog.ui.MenuButtonRenderer.wrapCaption = function(content, cssClass, dom) {
  */
 goog.ui.MenuButtonRenderer.prototype.createDropdown = function(dom) {
   // 00A0 is &nbsp;
-  return dom.createDom('div',
+  return dom.createDom(goog.dom.TagName.DIV,
       goog.ui.INLINE_BLOCK_CLASSNAME + ' ' +
       goog.getCssName(this.getCssClass(), 'dropdown'), '\u00A0');
 };

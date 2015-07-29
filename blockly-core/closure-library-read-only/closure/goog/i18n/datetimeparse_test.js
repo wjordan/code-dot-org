@@ -326,7 +326,7 @@ function testChineseDate() {
 
   parser = new goog.i18n.DateTimeParse(
       goog.i18n.DateTimeFormat.Format.FULL_TIME);
-  assertTrue(parser.parse('GMT-07:00\u4E0B\u534803:26:28', date) > 0);
+  assertTrue(parser.parse('GMT-07:00 \u4E0B\u534803:26:28', date) > 0);
 
   // Fails in Safari4/Chrome Winxp because of infrastructure issues, temporarily
   // disabled. See b/4274778.
@@ -399,6 +399,9 @@ function testTimeZone() {
 
   assertTrue(parser.parse('07/21/2003, 11:22:33 GMT0800', date) > 0);
   assertEquals(hourGmt08, date.getHours());
+
+  // 'foo' is not a timezone
+  assertFalse(parser.parse('07/21/2003, 11:22:33 foo', date) > 0);
 }
 
 function testWeekDay() {
@@ -450,6 +453,30 @@ function testStrictParse() {
   parser = new goog.i18n.DateTimeParse('yy/MM/dd');
   assertTrue(parser.strictParse('00/02/29', date) > 0);
   assertTrue(parser.strictParse('01/02/29', date) == 0);
+}
+
+function testPartialParses() {
+  var date = new Date(0);
+  var parser = new goog.i18n.DateTimeParse('h:mma');
+  assertTrue(parser.parse('5:', date) > 0);
+  assertEquals(5, date.getHours());
+  assertEquals(0, date.getMinutes());
+
+  date = new Date(0);
+  assertTrue(parser.parse('5:44pm', date) > 0);
+  assertEquals(17, date.getHours());
+  assertEquals(44, date.getMinutes());
+
+  date = new Date(0);
+  assertTrue(parser.parse('5:44ym', date) > 0);
+  assertEquals(5, date.getHours());
+  assertEquals(44, date.getMinutes());
+
+  parser = new goog.i18n.DateTimeParse('mm:ss');
+  date = new Date(0);
+  assertTrue(parser.parse('15:', date) > 0);
+  assertEquals(15, date.getMinutes());
+  assertEquals(0, date.getSeconds());
 }
 
 function testEnglishQuarter() {

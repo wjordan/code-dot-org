@@ -23,12 +23,11 @@ goog.provide('goog.testing.TestQueue');
 /**
  * Generic queue for writing unit tests
  * @constructor
- * @final
  */
 goog.testing.TestQueue = function() {
   /**
    * Events that have accumulated
-   * @type {Array.<Object>}
+   * @type {Array<Object>}
    * @private
    */
   this.events_ = [];

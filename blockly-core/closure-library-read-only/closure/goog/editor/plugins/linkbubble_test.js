@@ -252,7 +252,7 @@ function testDontLinkifyInvalidScheme() {
   FIELDMOCK.$replay();
   linkBubble.enable(FIELDMOCK);
 
-  var badLink = document.createElement('a');
+  var badLink = document.createElement(goog.dom.TagName.A);
   badLink.href = 'javascript:alert(1)';
   badLink.innerHTML = 'bad link';
 
@@ -318,7 +318,7 @@ function testLongUrlTestLinkAnchorTextCorrect() {
       'becauseitistoolong.com';
   var truncatedLongUrl = goog.string.truncateMiddle(longUrl, 48);
 
-  var longLink = document.createElement('a');
+  var longLink = document.createElement(goog.dom.TagName.A);
   longLink.href = longUrl;
   longLink.innerHTML = 'Google';
   fieldDiv.appendChild(longLink);
@@ -352,6 +352,26 @@ function testOverridingCreateBubbleContentsDoesntNpeGetTargetUrl() {
   assertNotThrows('Accessing this.urlUtil_ should not NPE',
                   goog.bind(linkBubble.handleSelectionChange,
                             linkBubble, createMouseEvent(link)));
+
+  FIELDMOCK.$verify();
+}
+
+
+/**
+ * @bug 15379294
+ */
+function testUpdateLinkCommandDoesNotTriggerAnException() {
+  FIELDMOCK.$replay();
+  linkBubble.enable(FIELDMOCK);
+
+  // At this point, the bubble was not created yet using its createBubble
+  // public method.
+  assertNotThrows(
+      'Executing goog.editor.Command.UPDATE_LINK_BUBBLE should not trigger ' +
+      'an exception even if the bubble was not created yet using its ' +
+      'createBubble method.',
+      goog.bind(linkBubble.execCommandInternal, linkBubble,
+                goog.editor.Command.UPDATE_LINK_BUBBLE));
 
   FIELDMOCK.$verify();
 }

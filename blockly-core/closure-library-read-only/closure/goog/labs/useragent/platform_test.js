@@ -96,6 +96,14 @@ function testIphone() {
   assertTrue(goog.labs.userAgent.platform.isIos());
   assertVersion('3.2');
   assertVersionBetween('3', '4');
+
+  uaString = goog.labs.userAgent.testAgents.WEBVIEW_IPAD;
+  goog.labs.userAgent.util.setUserAgent(uaString);
+  assertFalse(goog.labs.userAgent.platform.isIphone());
+  assertTrue(goog.labs.userAgent.platform.isIpad());
+  assertTrue(goog.labs.userAgent.platform.isIos());
+  assertVersion('6.0');
+  assertVersionBetween('5', '7');
 }
 
 function testIpad() {
@@ -206,6 +214,11 @@ function testWindows() {
   assertTrue(goog.labs.userAgent.platform.isWindows());
   assertVersion('6.3');
   assertVersionBetween('6', '6.5');
+
+  uaString = goog.labs.userAgent.testAgents.IE_10_MOBILE;
+  goog.labs.userAgent.util.setUserAgent(uaString);
+  assertTrue(goog.labs.userAgent.platform.isWindows());
+  assertVersion('8.0');
 }
 
 function testChromeOS() {

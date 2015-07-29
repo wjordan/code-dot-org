@@ -21,7 +21,10 @@
 goog.provide('goog.debug');
 
 goog.require('goog.array');
-goog.require('goog.string');
+goog.require('goog.html.SafeHtml');
+goog.require('goog.html.SafeUrl');
+goog.require('goog.html.uncheckedconversions');
+goog.require('goog.string.Const');
 goog.require('goog.structs.Set');
 goog.require('goog.userAgent');
 
@@ -193,7 +196,7 @@ goog.debug.deepExpose = function(obj, opt_showFn) {
 
 /**
  * Recursively outputs a nested array as a string.
- * @param {Array} arr The array.
+ * @param {Array<?>} arr The array.
  * @return {string} String representing nested array.
  */
 goog.debug.exposeArray = function(arr) {
@@ -211,34 +214,73 @@ goog.debug.exposeArray = function(arr) {
 
 /**
  * Exposes an exception that has been caught by a try...catch and outputs the
+ * error as HTML with a stack trace.
+ * @param {Object} err Error object or string.
+ * @param {Function=} opt_fn Optional function to start stack trace from.
+ * @return {string} Details of exception, as HTML.
+ */
+goog.debug.exposeException = function(err, opt_fn) {
+  var html = goog.debug.exposeExceptionAsHtml(err, opt_fn);
+  return goog.html.SafeHtml.unwrap(html);
+};
+
+
+/**
+ * Exposes an exception that has been caught by a try...catch and outputs the
  * error with a stack trace.
  * @param {Object} err Error object or string.
  * @param {Function=} opt_fn Optional function to start stack trace from.
- * @return {string} Details of exception.
+ * @return {!goog.html.SafeHtml} Details of exception.
  */
-goog.debug.exposeException = function(err, opt_fn) {
+goog.debug.exposeExceptionAsHtml = function(err, opt_fn) {
   /** @preserveTry */
   try {
     var e = goog.debug.normalizeErrorObject(err);
-
     // Create the error message
-    var error = 'Message: ' + goog.string.htmlEscape(e.message) +
-        '\nUrl: <a href="view-source:' + e.fileName + '" target="_new">' +
-        e.fileName + '</a>\nLine: ' + e.lineNumber + '\n\nBrowser stack:\n' +
-        goog.string.htmlEscape(e.stack + '-> ') +
-        '[end]\n\nJS stack traversal:\n' + goog.string.htmlEscape(
-            goog.debug.getStacktrace(opt_fn) + '-> ');
+    var viewSourceUrl = goog.debug.createViewSourceUrl_(e.fileName);
+    var error = goog.html.SafeHtml.concat(
+        goog.html.SafeHtml.htmlEscapePreservingNewlinesAndSpaces(
+            'Message: ' + e.message + '\nUrl: '),
+        goog.html.SafeHtml.create('a',
+            {href: viewSourceUrl, target: '_new'}, e.fileName),
+        goog.html.SafeHtml.htmlEscapePreservingNewlinesAndSpaces(
+            '\nLine: ' + e.lineNumber + '\n\nBrowser stack:\n' +
+            e.stack + '-> ' + '[end]\n\nJS stack traversal:\n' +
+            goog.debug.getStacktrace(opt_fn) + '-> '));
     return error;
   } catch (e2) {
-    return 'Exception trying to expose exception! You win, we lose. ' + e2;
+    return goog.html.SafeHtml.htmlEscapePreservingNewlinesAndSpaces(
+        'Exception trying to expose exception! You win, we lose. ' + e2);
   }
+};
+
+
+/**
+ * @param {?string=} opt_fileName
+ * @return {!goog.html.SafeUrl} SafeUrl with view-source scheme, pointing at
+ *     fileName.
+ * @private
+ */
+goog.debug.createViewSourceUrl_ = function(opt_fileName) {
+  if (!goog.isDefAndNotNull(opt_fileName)) {
+    opt_fileName = '';
+  }
+  if (!/^https?:\/\//i.test(opt_fileName)) {
+    return goog.html.SafeUrl.fromConstant(
+        goog.string.Const.from('sanitizedviewsrc'));
+  }
+  var sanitizedFileName = goog.html.SafeUrl.sanitize(opt_fileName);
+  return goog.html.uncheckedconversions.
+      safeUrlFromStringKnownToSatisfyTypeContract(
+          goog.string.Const.from('view-source scheme plus HTTP/HTTPS URL'),
+          'view-source:' + goog.html.SafeUrl.unwrap(sanitizedFileName));
 };
 
 
 /**
  * Normalizes the error/exception object between browsers.
  * @param {Object} err Raw error object.
- * @return {Object} Normalized error object.
+ * @return {!Object} Normalized error object.
  */
 goog.debug.normalizeErrorObject = function(err) {
   var href = goog.getObjectByName('window.location.href');
@@ -300,14 +342,24 @@ goog.debug.normalizeErrorObject = function(err) {
  * @param {Error|string} err  the original thrown object or string.
  * @param {string=} opt_message  optional additional message to add to the
  *     error.
- * @return {Error} If err is a string, it is used to create a new Error,
+ * @return {!Error} If err is a string, it is used to create a new Error,
  *     which is enhanced and returned.  Otherwise err itself is enhanced
  *     and returned.
  */
 goog.debug.enhanceError = function(err, opt_message) {
-  var error = typeof err == 'string' ? Error(err) : err;
+  var error;
+  if (typeof err == 'string') {
+    error = Error(err);
+    if (Error.captureStackTrace) {
+      // Trim this function off the call stack, if we can.
+      Error.captureStackTrace(error, goog.debug.enhanceError);
+    }
+  } else {
+    error = err;
+  }
+
   if (!error.stack) {
-    error.stack = goog.debug.getStacktrace(arguments.callee.caller);
+    error.stack = goog.debug.getStacktrace(goog.debug.enhanceError);
   }
   if (opt_message) {
     // find the first unoccupied 'messageX' property
@@ -327,8 +379,18 @@ goog.debug.enhanceError = function(err, opt_message) {
  * @param {number=} opt_depth Optional maximum depth to trace back to.
  * @return {string} A string with the function names of all functions in the
  *     stack, separated by \n.
+ * @suppress {es5Strict}
  */
 goog.debug.getStacktraceSimple = function(opt_depth) {
+  if (goog.STRICT_MODE_COMPATIBLE) {
+    var stack = goog.debug.getNativeStackTrace_(goog.debug.getStacktraceSimple);
+    if (stack) {
+      return stack;
+    }
+    // NOTE: browsers that have strict mode support also have native "stack"
+    // properties.  Fall-through for legacy browser support.
+  }
+
   var sb = [];
   var fn = arguments.callee.caller;
   var depth = 0;
@@ -367,22 +429,62 @@ goog.debug.MAX_STACK_DEPTH = 50;
 
 
 /**
+ * @param {Function} fn The function to start getting the trace from.
+ * @return {?string}
+ * @private
+ */
+goog.debug.getNativeStackTrace_ = function(fn) {
+  var tempErr = new Error();
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(tempErr, fn);
+    return String(tempErr.stack);
+  } else {
+    // IE10, only adds stack traces when an exception is thrown.
+    try {
+      throw tempErr;
+    } catch (e) {
+      tempErr = e;
+    }
+    var stack = tempErr.stack;
+    if (stack) {
+      return String(stack);
+    }
+  }
+  return null;
+};
+
+
+/**
  * Gets the current stack trace, either starting from the caller or starting
  * from a specified function that's currently on the call stack.
  * @param {Function=} opt_fn Optional function to start getting the trace from.
  *     If not provided, defaults to the function that called this.
  * @return {string} Stack trace.
+ * @suppress {es5Strict}
  */
 goog.debug.getStacktrace = function(opt_fn) {
-  return goog.debug.getStacktraceHelper_(opt_fn || arguments.callee.caller, []);
+  var stack;
+  if (goog.STRICT_MODE_COMPATIBLE) {
+    // Try to get the stack trace from the environment if it is available.
+    var contextFn = opt_fn || goog.debug.getStacktrace;
+    stack = goog.debug.getNativeStackTrace_(contextFn);
+  }
+  if (!stack) {
+    // NOTE: browsers that have strict mode support also have native "stack"
+    // properties. This function will throw in strict mode.
+    stack = goog.debug.getStacktraceHelper_(
+        opt_fn || arguments.callee.caller, []);
+  }
+  return stack;
 };
 
 
 /**
  * Private helper for getStacktrace().
  * @param {Function} fn Function to start getting the trace from.
- * @param {Array} visited List of functions visited so far.
+ * @param {Array<!Function>} visited List of functions visited so far.
  * @return {string} Stack trace starting from function fn.
+ * @suppress {es5Strict}
  * @private
  */
 goog.debug.getStacktraceHelper_ = function(fn, visited) {
@@ -511,6 +613,27 @@ goog.debug.makeWhitespaceVisible = function(string) {
       .replace(/\n/g, '[n]\n')
       .replace(/\r/g, '[r]')
       .replace(/\t/g, '[t]');
+};
+
+
+/**
+ * Returns the type of a value. If a constructor is passed, and a suitable
+ * string cannot be found, 'unknown type name' will be returned.
+ *
+ * <p>Forked rather than moved from {@link goog.asserts.getType_}
+ * to avoid adding a dependency to goog.asserts.
+ * @param {*} value A constructor, object, or primitive.
+ * @return {string} The best display name for the value, or 'unknown type name'.
+ */
+goog.debug.runtimeType = function(value) {
+  if (value instanceof Function) {
+    return value.displayName || value.name || 'unknown type name';
+  } else if (value instanceof Object) {
+    return value.constructor.displayName || value.constructor.name ||
+        Object.prototype.toString.call(value);
+  } else {
+    return value === null ? 'null' : typeof value;
+  }
 };
 
 

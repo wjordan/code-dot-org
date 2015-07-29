@@ -21,6 +21,8 @@
 
 goog.provide('goog.ui.editor.TabPane');
 
+goog.require('goog.asserts');
+goog.require('goog.dom.InputType');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventHandler');
@@ -47,7 +49,7 @@ goog.ui.editor.TabPane = function(dom, opt_caption) {
 
   /**
    * The event handler used to register events.
-   * @type {goog.events.EventHandler.<!goog.ui.editor.TabPane>}
+   * @type {goog.events.EventHandler<!goog.ui.editor.TabPane>}
    * @private
    */
   this.eventHandler_ = new goog.events.EventHandler(this);
@@ -127,7 +129,7 @@ goog.ui.editor.TabPane.prototype.addTab = function(id, caption, tooltip,
   var radio = this.dom_.createDom(goog.dom.TagName.INPUT,
       {
         name: groupName,
-        type: 'radio'
+        type: goog.dom.InputType.RADIO
       });
 
   var tab = new goog.ui.Tab([radio, this.dom_.createTextNode(caption)],
@@ -157,6 +159,7 @@ goog.ui.editor.TabPane.prototype.enterDocument = function() {
 
   // Get the root element and add a class name to it.
   var root = this.getElement();
+  goog.asserts.assert(root);
   goog.dom.classlist.add(root, goog.getCssName('tr-tabpane'));
 
   // Add the tabs.

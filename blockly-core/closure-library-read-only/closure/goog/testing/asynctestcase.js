@@ -17,7 +17,7 @@
  * @fileoverview A class representing a set of test functions that use
  * asynchronous functions that cannot be meaningfully mocked.
  *
- * To create a Google-compatable JsUnit test using this test case, put the
+ * To create a Google-compatible JsUnit test using this test case, put the
  * following snippet in your test:
  *
  *   var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall();
@@ -111,7 +111,6 @@ goog.provide('goog.testing.AsyncTestCase');
 goog.provide('goog.testing.AsyncTestCase.ControlBreakingException');
 
 goog.require('goog.testing.TestCase');
-goog.require('goog.testing.TestCase.Test');
 goog.require('goog.testing.asserts');
 
 
@@ -141,15 +140,20 @@ goog.testing.AsyncTestCase.TopStackFuncResult_;
  * An exception class used solely for control flow.
  * @param {string=} opt_message Error message.
  * @constructor
+ * @extends {Error}
  * @final
  */
 goog.testing.AsyncTestCase.ControlBreakingException = function(opt_message) {
+  goog.testing.AsyncTestCase.ControlBreakingException.base(
+      this, 'constructor', opt_message);
+
   /**
    * The exception message.
    * @type {string}
    */
   this.message = opt_message || '';
 };
+goog.inherits(goog.testing.AsyncTestCase.ControlBreakingException, Error);
 
 
 /**
@@ -803,7 +807,7 @@ goog.testing.AsyncTestCase.prototype.pump_ = function(opt_doFirst) {
       // If the max run time is exceeded call this function again async so as
       // not to block the browser.
       var delta = this.now() - this.getBatchTime();
-      if (delta > goog.testing.TestCase.MAX_RUN_TIME &&
+      if (delta > goog.testing.TestCase.maxRunTime &&
           !topFuncResult.controlBreakingExceptionThrown) {
         this.saveMessage('Breaking async');
         var self = this;

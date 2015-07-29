@@ -22,6 +22,7 @@
 
 goog.provide('goog.ui.PopupColorPicker');
 
+goog.require('goog.asserts');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.positioning.AnchoredPosition');
@@ -49,6 +50,7 @@ goog.ui.PopupColorPicker = function(opt_domHelper, opt_colorPicker) {
   }
 };
 goog.inherits(goog.ui.PopupColorPicker, goog.ui.Component);
+goog.tagUnsealableClass(goog.ui.PopupColorPicker);
 
 
 /**
@@ -101,6 +103,10 @@ goog.ui.PopupColorPicker.prototype.popupCorner_ =
 goog.ui.PopupColorPicker.prototype.lastTarget_ = null;
 
 
+/** @private {boolean} */
+goog.ui.PopupColorPicker.prototype.rememberSelection_;
+
+
 /**
  * Whether the color picker can move the focus to its key event target when it
  * is shown.  The default is true.  Setting to false can break keyboard
@@ -142,7 +148,8 @@ goog.ui.PopupColorPicker.prototype.createDom = function() {
   goog.ui.PopupColorPicker.superClass_.createDom.call(this);
   this.popup_ = new goog.ui.Popup(this.getElement());
   this.popup_.setPinnedCorner(this.pinnedCorner_);
-  goog.dom.classlist.set(this.getElement(),
+  goog.dom.classlist.set(
+      goog.asserts.assert(this.getElement()),
       goog.getCssName('goog-popupcolorpicker'));
   this.getElement().unselectable = 'on';
 };
@@ -366,7 +373,7 @@ goog.ui.PopupColorPicker.prototype.getRememberSelection = function() {
 /**
  * Add an array of colors to the colors displayed by the color picker.
  * Does not add duplicated colors.
- * @param {Array.<string>} colors The array of colors to be added.
+ * @param {Array<string>} colors The array of colors to be added.
  */
 goog.ui.PopupColorPicker.prototype.addColors = function(colors) {
 

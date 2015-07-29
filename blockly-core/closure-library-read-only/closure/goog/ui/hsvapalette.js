@@ -18,6 +18,7 @@
  * Without the styles from the demo css file, only a hex color label and input
  * field show up.
  *
+ * @author chrisn@google.com (Chris Nokleberg)
  * @see ../demos/hsvapalette.html
  */
 
@@ -70,7 +71,7 @@ goog.inherits(goog.ui.HsvaPalette, goog.ui.HsvPalette);
 
 /**
  * DOM element representing the alpha background image.
- * @type {Element}
+ * @type {HTMLElement}
  * @private
  */
 goog.ui.HsvaPalette.prototype.aImageEl_;
@@ -78,7 +79,7 @@ goog.ui.HsvaPalette.prototype.aImageEl_;
 
 /**
  * DOM element representing the alpha handle.
- * @type {Element}
+ * @type {HTMLElement}
  * @private
  */
 goog.ui.HsvaPalette.prototype.aHandleEl_;
@@ -104,7 +105,7 @@ goog.ui.HsvaPalette.prototype.getAlpha = function() {
  * @param {number} alpha The selected alpha value, in [0, 1].
  */
 goog.ui.HsvaPalette.prototype.setAlpha = function(alpha) {
-  this.setColorAlphaHelper_(this.color_, alpha);
+  this.setColorAlphaHelper_(this.color, alpha);
 };
 
 
@@ -126,7 +127,7 @@ goog.ui.HsvaPalette.prototype.setColor = function(color) {
  */
 goog.ui.HsvaPalette.prototype.getColorRgbaHex = function() {
   var alphaHex = Math.floor(this.alpha_ * 255).toString(16);
-  return this.color_ + (alphaHex.length == 1 ? '0' + alphaHex : alphaHex);
+  return this.color + (alphaHex.length == 1 ? '0' + alphaHex : alphaHex);
 };
 
 
@@ -149,10 +150,10 @@ goog.ui.HsvaPalette.prototype.setColorRgbaHex = function(color) {
  * @private
  */
 goog.ui.HsvaPalette.prototype.setColorAlphaHelper_ = function(color, alpha) {
-  var colorChange = this.color_ != color;
+  var colorChange = this.color != color;
   var alphaChange = this.alpha_ != alpha;
   this.alpha_ = alpha;
-  this.color_ = color;
+  this.color = color;
   if (colorChange) {
     // This is to prevent multiple event dispatches.
     this.setColorInternal(color);
@@ -169,10 +170,10 @@ goog.ui.HsvaPalette.prototype.createDom = function() {
   goog.ui.HsvaPalette.base(this, 'createDom');
 
   var dom = this.getDomHelper();
-  this.aImageEl_ = dom.createDom(
-      goog.dom.TagName.DIV, goog.getCssName(this.className, 'a-image'));
-  this.aHandleEl_ = dom.createDom(
-      goog.dom.TagName.DIV, goog.getCssName(this.className, 'a-handle'));
+  this.aImageEl_ = /** @type {!HTMLElement} */ (dom.createDom(
+      goog.dom.TagName.DIV, goog.getCssName(this.className, 'a-image')));
+  this.aHandleEl_ = /** @type {!HTMLElement} */ (dom.createDom(
+      goog.dom.TagName.DIV, goog.getCssName(this.className, 'a-handle')));
   this.swatchBackdropEl_ = dom.createDom(
       goog.dom.TagName.DIV, goog.getCssName(this.className, 'swatch-backdrop'));
   var element = this.getElement();
@@ -201,7 +202,7 @@ goog.ui.HsvaPalette.prototype.updateUi = function() {
         Math.floor(this.aHandleEl_.offsetHeight / 2) +
         this.aImageEl_.offsetHeight * ((255 - a) / 255);
     this.aHandleEl_.style.top = top + 'px';
-    this.aImageEl_.style.backgroundColor = this.color_;
+    this.aImageEl_.style.backgroundColor = this.color;
     goog.style.setOpacity(this.swatchElement, a / 255);
   }
 };
@@ -209,7 +210,7 @@ goog.ui.HsvaPalette.prototype.updateUi = function() {
 
 /** @override */
 goog.ui.HsvaPalette.prototype.updateInput = function() {
-  if (!goog.array.equals([this.color_, this.alpha_],
+  if (!goog.array.equals([this.color, this.alpha_],
       goog.ui.HsvaPalette.parseUserInput_(this.inputElement.value))) {
     this.inputElement.value = this.getColorRgbaHex();
   }
@@ -223,11 +224,11 @@ goog.ui.HsvaPalette.prototype.handleMouseDown = function(e) {
     // Setup value change listeners
     var b = goog.style.getBounds(this.valueBackgroundImageElement);
     this.handleMouseMoveA_(b, e);
-    this.mouseMoveListener_ = goog.events.listen(
+    this.mouseMoveListener = goog.events.listen(
         this.getDomHelper().getDocument(),
         goog.events.EventType.MOUSEMOVE,
         goog.bind(this.handleMouseMoveA_, this, b));
-    this.mouseUpListener_ = goog.events.listen(
+    this.mouseUpListener = goog.events.listen(
         this.getDomHelper().getDocument(),
         goog.events.EventType.MOUSEUP, this.handleMouseUp, false, this);
   }
@@ -264,8 +265,8 @@ goog.ui.HsvaPalette.prototype.handleInput = function(e) {
 /**
  * Parses an #rrggbb or #rrggbbaa color string.
  * @param {string} value User-entered color value.
- * @return {Array} A two element array [color, alpha], where color is #rrggbb
- *     and alpha is in [0, 1]. Null if the argument was invalid.
+ * @return {Array<?>} A two element array [color, alpha], where color is
+ *     #rrggbb and alpha is in [0, 1]. Null if the argument was invalid.
  * @private
  */
 goog.ui.HsvaPalette.parseUserInput_ = function(value) {
@@ -281,8 +282,8 @@ goog.ui.HsvaPalette.parseUserInput_ = function(value) {
 /**
  * Parses a #rrggbbaa color string.
  * @param {string} color The color and alpha in #rrggbbaa format.
- * @return {Array} A two element array [color, alpha], where color is #rrggbb
- *     and alpha is in [0, 1].
+ * @return {!Array<?>} A two element array [color, alpha], where color is
+ *     #rrggbb and alpha is in [0, 1].
  * @private
  */
 goog.ui.HsvaPalette.parseColorRgbaHex_ = function(color) {

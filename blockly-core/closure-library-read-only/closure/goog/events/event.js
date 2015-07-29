@@ -60,6 +60,9 @@ goog.events.Event = function(type, opt_target) {
   this.type = type instanceof goog.events.EventId ? String(type) : type;
 
   /**
+   * TODO(tbreisacher): The type should probably be
+   * EventTarget|goog.events.EventTarget.
+   *
    * Target of the event.
    * @type {Object|undefined}
    */
@@ -98,24 +101,6 @@ goog.events.Event = function(type, opt_target) {
    *     outside this package is strongly discouraged.
    */
   this.returnValue_ = true;
-};
-
-
-/**
- * For backwards compatibility (goog.events.Event used to inherit
- * goog.Disposable).
- * @deprecated Events don't need to be disposed.
- */
-goog.events.Event.prototype.disposeInternal = function() {
-};
-
-
-/**
- * For backwards compatibility (goog.events.Event used to inherit
- * goog.Disposable).
- * @deprecated Events don't need to be disposed.
- */
-goog.events.Event.prototype.dispose = function() {
 };
 
 

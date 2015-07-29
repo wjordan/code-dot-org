@@ -127,9 +127,21 @@ function testToString() {
   // No address.
   assertEquals('JOHN Doe', f('JOHN Doe <>'));
 
-  // Special char in the name.
+  // Special chars in the name.
   assertEquals('"JOHN, Doe" <john@gmail.com>',
                f('JOHN, Doe <john@gmail.com>'));
+  assertEquals('"JOHN(Johnny) Doe" <john@gmail.com>',
+               f('JOHN(Johnny) Doe <john@gmail.com>'));
+  assertEquals('"JOHN[Johnny] Doe" <john@gmail.com>',
+               f('JOHN[Johnny] Doe <john@gmail.com>'));
+  assertEquals('"JOHN@work Doe" <john@gmail.com>',
+               f('JOHN@work Doe <john@gmail.com>'));
+  assertEquals('"JOHN:theking Doe" <john@gmail.com>',
+               f('JOHN:theking Doe <john@gmail.com>'));
+  assertEquals('"JOHN\\\\ Doe" <john@gmail.com>',
+               f('JOHN\\ Doe <john@gmail.com>'));
+  assertEquals('"JOHN.com Doe" <john@gmail.com>',
+               f('JOHN.com Doe <john@gmail.com>'));
 
   // Already quoted.
   assertEquals('"JOHN, Doe" <john@gmail.com>',
@@ -165,11 +177,15 @@ function testIsValid() {
     'e@b.eu', '<a.b+foo@c.com>', 'eric <e@b.com>', '"e" <e@b.com>',
     'a@FOO.MUSEUM', 'bla@b.co.ac.uk', 'bla@a.b.com', 'o\'hara@gm.com',
     'plus+is+allowed@gmail.com', '!/#$%&\'*+-=~|`{}?^_@expample.com',
-    'aaa@gmail', 'confirm-bhk=modulo.org@yahoogroups.com'];
+    'confirm-bhk=modulo.org@yahoogroups.com'];
   var invalid = [
     'e', '', 'e @c.com', 'a@b', 'foo.com', 'foo@c..com', 'test@gma=il.com',
-    'has some spaces@gmail.com', 'has@three@at@signs.com',
-    '@no-local-part.com'];
+    'aaa@gmail', 'has some spaces@gmail.com', 'has@three@at@signs.com',
+    '@no-local-part.com', 'み.ん-あ@みんあ.みんあ',
+    'みんあ@test.com', 'test@test.みんあ', 'test@みんあ.com',
+    'fullwidthfullstop@sld' + '\uff0e' + 'tld',
+    'ideographicfullstop@sld' + '\u3002' + 'tld',
+    'halfwidthideographicfullstop@sld' + '\uff61' + 'tld'];
   doIsValidTest(goog.format.EmailAddress.isValidAddress, valid, invalid);
 }
 
@@ -185,9 +201,10 @@ function testIsValidLocalPart() {
 
 function testIsValidDomainPart() {
   var valid = [
-    'example.com', 'dept.example.org', 'long.domain.with.lots.of.dots',
-    'DoesNotHaveADot'];
-  var invalid = ['', '@has.an.at.sign', '..has.leading.dots', 'gma=il.com'];
+    'example.com', 'dept.example.org', 'long.domain.with.lots.of.dots'];
+  var invalid = ['', '@has.an.at.sign', '..has.leading.dots', 'gma=il.com',
+    'DoesNotHaveADot', 'sld' + '\uff0e' + 'tld', 'sld' + '\u3002' + 'tld',
+    'sld' + '\uff61' + 'tld'];
   doIsValidTest(goog.format.EmailAddress.isValidDomainPartSpec, valid, invalid);
 }
 
@@ -196,7 +213,7 @@ function testIsValidDomainPart() {
  * Asserts that parsing the inputString produces a list of email addresses
  * containing the specified address strings, irrespective of their order.
  * @param {string} inputString A raw address list.
- * @param {Array.<string>} expectedList The expected results.
+ * @param {Array<string>} expectedList The expected results.
  * @param {string=} opt_message An assertion message.
  * @return {string} the resulting email address objects.
  */

@@ -94,12 +94,21 @@ function tearDownDomTree() {
 }
 
 function testGetCompatModeQuirks() {
-  var quirksIfr = document.createElement('iframe');
+  var quirksIfr = document.createElement(goog.dom.TagName.IFRAME);
   document.body.appendChild(quirksIfr);
   // Webkit used to default to standards mode, but fixed this in
   // Safari 4/Chrome 2, aka, WebKit 530.
-  expectedFailures.expectFailureFor(goog.userAgent.WEBKIT &&
-                                    !goog.userAgent.isVersionOrHigher('530'));
+  // Also IE10 fails here.
+  // TODO(johnlenz):  IE10+ inherit quirks mode from the owner document
+  // according to:
+  // http://msdn.microsoft.com/en-us/library/ff955402(v=vs.85).aspx
+  // but this test shows different behavior for IE10 and 11. If we discover
+  // that we care about quirks mode documents we should investigate
+  // this failure.
+  expectedFailures.expectFailureFor(
+      (goog.userAgent.WEBKIT && !goog.userAgent.isVersionOrHigher('530')) ||
+      (goog.userAgent.IE && goog.userAgent.isVersionOrHigher('10') &&
+          !goog.userAgent.isVersionOrHigher('11')));
   expectedFailures.run(function() {
     assertFalse('Empty sourceless iframe is quirks mode, not standards mode',
         goog.editor.node.isStandardsMode(
@@ -109,7 +118,7 @@ function testGetCompatModeQuirks() {
 }
 
 function testGetCompatModeStandards() {
-  var standardsIfr = document.createElement('iframe');
+  var standardsIfr = document.createElement(goog.dom.TagName.IFRAME);
   document.body.appendChild(standardsIfr);
   var doc = goog.dom.getFrameContentDocument(standardsIfr);
   doc.open();
@@ -226,7 +235,7 @@ function testIsImportant() {
   var nbspNode = document.createTextNode('\u00a0');
   assertTrue('Node with nbsp is important',
       goog.editor.node.isImportant(nbspNode));
-  var imageNode = document.createElement('img');
+  var imageNode = document.createElement(goog.dom.TagName.IMG);
   assertTrue('Image node is important',
       goog.editor.node.isImportant(imageNode));
 }
@@ -330,7 +339,7 @@ function testIsEmpty() {
   assertFalse('Text node with text should not be empty',
       goog.editor.node.isEmpty(textNode));
 
-  var div = document.createElement('div');
+  var div = document.createElement(goog.dom.TagName.DIV);
   assertTrue('Empty div should be empty',
       goog.editor.node.isEmpty(div));
   div.innerHTML = '<iframe></iframe>';
@@ -360,7 +369,7 @@ function testIsEmpty() {
   assertFalse('Empty iframe should not be empty',
       goog.editor.node.isEmpty(iframe));
 
-  var embed = document.createElement('embed');
+  var embed = document.createElement(goog.dom.TagName.EMBED);
   assertFalse('Empty embed should not be empty',
       goog.editor.node.isEmpty(embed));
 }
@@ -372,7 +381,7 @@ function testIsEmpty() {
  * and the length of the node if the node does have length
  */
 function testGetLength() {
-  var parentNode = document.createElement('p');
+  var parentNode = document.createElement(goog.dom.TagName.P);
 
   assertEquals('Length 0 and no children', 0,
       goog.editor.node.getLength(parentNode));
@@ -392,18 +401,18 @@ function testGetLength() {
 }
 
 function testFindInChildrenSuccess() {
-  var parentNode = document.createElement('div');
+  var parentNode = document.createElement(goog.dom.TagName.DIV);
   parentNode.innerHTML = '<div>foo</div><b>foo2</b>';
 
   var index = goog.editor.node.findInChildren(parentNode,
       function(node) {
-        return node.tagName == 'B';
+        return node.tagName == goog.dom.TagName.B;
       });
   assertEquals('Should find second child', index, 1);
 }
 
 function testFindInChildrenFailure() {
-  var parentNode = document.createElement('div');
+  var parentNode = document.createElement(goog.dom.TagName.DIV);
   parentNode.innerHTML = '<div>foo</div><b>foo2</b>';
 
   var index = goog.editor.node.findInChildren(parentNode,
@@ -416,7 +425,7 @@ function testFindInChildrenFailure() {
 function testFindHighestMatchingAncestor() {
   setUpDomTree();
   var predicateFunc = function(node) {
-    return node.tagName == 'DIV';
+    return node.tagName == goog.dom.TagName.DIV;
   };
   var node = goog.editor.node.findHighestMatchingAncestor(
       gChildTextNode3a, predicateFunc);
@@ -517,7 +526,7 @@ function testIsBlock() {
 }
 
 function createDivWithTextNodes(var_args) {
-  var dom = goog.dom.createDom('div');
+  var dom = goog.dom.createDom(goog.dom.TagName.DIV);
   for (var i = 0; i < arguments.length; i++) {
     goog.dom.appendChild(dom, goog.dom.createTextNode(arguments[i]));
   }
@@ -550,7 +559,8 @@ function testIsEditableContainer() {
 function testIsEditable() {
   var editableContainerElement = document.getElementById('editableTest');
   var childNode = editableContainerElement.firstChild;
-  var childElement = editableContainerElement.getElementsByTagName('span')[0];
+  var childElement = editableContainerElement.getElementsByTagName(
+      goog.dom.TagName.SPAN)[0];
 
   assertFalse('Container element should not be considered editable',
       goog.editor.node.isEditable(editableContainerElement));

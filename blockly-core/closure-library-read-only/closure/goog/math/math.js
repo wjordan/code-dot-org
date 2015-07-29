@@ -105,14 +105,27 @@ goog.math.nearlyEquals = function(a, b, opt_tolerance) {
 };
 
 
+// TODO(user): Rename to normalizeAngle, retaining old name as deprecated
+// alias.
 /**
- * Standardizes an angle to be in range [0-360). Negative angles become
- * positive, and values greater than 360 are returned modulo 360.
+ * Normalizes an angle to be in range [0-360). Angles outside this range will
+ * be normalized to be the equivalent angle with that range.
  * @param {number} angle Angle in degrees.
  * @return {number} Standardized angle.
  */
 goog.math.standardAngle = function(angle) {
   return goog.math.modulo(angle, 360);
+};
+
+
+/**
+ * Normalizes an angle to be in range [0-2*PI). Angles outside this range will
+ * be normalized to be the equivalent angle with that range.
+ * @param {number} angle Angle in radians.
+ * @return {number} Standardized angle.
+ */
+goog.math.standardAngleInRadians = function(angle) {
+  return goog.math.modulo(angle, 2 * Math.PI);
 };
 
 
@@ -204,10 +217,17 @@ goog.math.angleDifference = function(startAngle, endAngle) {
 /**
  * Returns the sign of a number as per the "sign" or "signum" function.
  * @param {number} x The number to take the sign of.
- * @return {number} -1 when negative, 1 when positive, 0 when 0.
+ * @return {number} -1 when negative, 1 when positive, 0 when 0. Preserves
+ *     signed zeros and NaN.
  */
-goog.math.sign = function(x) {
-  return x == 0 ? 0 : (x < 0 ? -1 : 1);
+goog.math.sign = Math.sign || function(x) {
+  if (x > 0) {
+    return 1;
+  }
+  if (x < 0) {
+    return -1;
+  }
+  return x;  // Preserves signed zeros and NaN.
 };
 
 
@@ -217,8 +237,8 @@ goog.math.sign = function(x) {
  *
  * Returns the longest possible array that is subarray of both of given arrays.
  *
- * @param {Array.<Object>} array1 First array of objects.
- * @param {Array.<Object>} array2 Second array of objects.
+ * @param {Array<Object>} array1 First array of objects.
+ * @param {Array<Object>} array2 Second array of objects.
  * @param {Function=} opt_compareFn Function that acts as a custom comparator
  *     for the array ojects. Function should return true if objects are equal,
  *     otherwise false.
@@ -226,7 +246,7 @@ goog.math.sign = function(x) {
  *     as a result subsequence. It accepts 2 arguments: index of common element
  *     in the first array and index in the second. The default function returns
  *     element from the first array.
- * @return {Array.<Object>} A list of objects that are common to both arrays
+ * @return {!Array<Object>} A list of objects that are common to both arrays
  *     such that there is no common subsequence with size greater than the
  *     length of the list.
  */
@@ -370,6 +390,15 @@ goog.math.isFiniteNumber = function(num) {
 
 
 /**
+ * @param {number} num The number to test.
+ * @return {boolean} Whether it is negative zero.
+ */
+goog.math.isNegativeZero = function(num) {
+  return num == 0 && 1 / num < 0;
+};
+
+
+/**
  * Returns the precise value of floor(log10(num)).
  * Simpler implementations didn't work because of floating point rounding
  * errors. For example
@@ -385,7 +414,7 @@ goog.math.isFiniteNumber = function(num) {
 goog.math.log10Floor = function(num) {
   if (num > 0) {
     var x = Math.round(Math.log(num) * Math.LOG10E);
-    return x - (Math.pow(10, x) > num);
+    return x - (parseFloat('1e' + x) > num);
   }
   return num == 0 ? -Infinity : NaN;
 };

@@ -46,6 +46,7 @@ goog.ui.TabBarRenderer = function() {
 };
 goog.inherits(goog.ui.TabBarRenderer, goog.ui.ContainerRenderer);
 goog.addSingletonGetter(goog.ui.TabBarRenderer);
+goog.tagUnsealableClass(goog.ui.TabBarRenderer);
 
 
 /**
@@ -103,7 +104,7 @@ goog.ui.TabBarRenderer.prototype.setStateFromClassName = function(tabBar,
  * class name to the list.
  * @param {goog.ui.Container} tabBar Tab bar whose CSS classes are to be
  *     returned.
- * @return {Array.<string>} Array of CSS class names applicable to the tab bar.
+ * @return {!Array<string>} Array of CSS class names applicable to the tab bar.
  * @override
  */
 goog.ui.TabBarRenderer.prototype.getClassNames = function(tabBar) {

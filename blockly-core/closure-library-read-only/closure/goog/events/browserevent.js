@@ -18,7 +18,6 @@
  * <pre>
  * The patched event object contains the following members:
  * - type           {string}    Event type, e.g. 'click'
- * - timestamp      {Date}      A date object for when the event was fired
  * - target         {Object}    The element that actually triggered the event
  * - currentTarget  {Object}    The element the listener is attached to
  * - relatedTarget  {Object}    For mouseover and mouseout, the previous object
@@ -41,6 +40,7 @@
  * key and character code use {@link goog.events.KeyHandler}.
  * </pre>
  *
+ * @author arv@google.com (Erik Arvidsson)
  */
 
 goog.provide('goog.events.BrowserEvent');
@@ -205,7 +205,7 @@ goog.events.BrowserEvent.MouseButton = {
 
 /**
  * Static data for mapping mouse buttons.
- * @type {!Array.<number>}
+ * @type {!Array<number>}
  */
 goog.events.BrowserEvent.IEButtonMap = [
   1, // LEFT
@@ -383,9 +383,4 @@ goog.events.BrowserEvent.prototype.preventDefault = function() {
  */
 goog.events.BrowserEvent.prototype.getBrowserEvent = function() {
   return this.event_;
-};
-
-
-/** @override */
-goog.events.BrowserEvent.prototype.disposeInternal = function() {
 };

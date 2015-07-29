@@ -26,10 +26,9 @@ goog.provide('goog.fx.AnimationSerialQueue');
 
 goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('goog.events.EventHandler');
-goog.require('goog.fx.Transition.EventType');
+goog.require('goog.events');
+goog.require('goog.fx.Transition');
 goog.require('goog.fx.TransitionBase');
-goog.require('goog.fx.TransitionBase.State');
 
 
 
@@ -37,14 +36,16 @@ goog.require('goog.fx.TransitionBase.State');
  * Constructor for AnimationQueue object.
  *
  * @constructor
+ * @struct
  * @extends {goog.fx.TransitionBase}
+ * @suppress {checkStructDictInheritance}
  */
 goog.fx.AnimationQueue = function() {
   goog.fx.AnimationQueue.base(this, 'constructor');
 
   /**
    * An array holding all animations in the queue.
-   * @type {Array.<goog.fx.TransitionBase>}
+   * @type {Array<goog.fx.TransitionBase>}
    * @protected
    */
   this.queue = [];
@@ -111,6 +112,7 @@ goog.fx.AnimationQueue.prototype.disposeInternal = function() {
 /**
  * Constructor for AnimationParallelQueue object.
  * @constructor
+ * @struct
  * @extends {goog.fx.AnimationQueue}
  */
 goog.fx.AnimationParallelQueue = function() {
@@ -208,6 +210,7 @@ goog.fx.AnimationParallelQueue.prototype.onAnimationFinish = function(e) {
 /**
  * Constructor for AnimationSerialQueue object.
  * @constructor
+ * @struct
  * @extends {goog.fx.AnimationQueue}
  */
 goog.fx.AnimationSerialQueue = function() {

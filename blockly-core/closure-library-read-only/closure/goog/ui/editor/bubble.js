@@ -20,11 +20,11 @@
  * be used directly.
  *
  * @author robbyw@google.com (Robby Walker)
- * @author tildahl@google.com (Michael Tildahl)
  */
 
 goog.provide('goog.ui.editor.Bubble');
 
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.ViewportSizeMonitor');
@@ -33,6 +33,7 @@ goog.require('goog.editor.style');
 goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventTarget');
 goog.require('goog.events.EventType');
+goog.require('goog.functions');
 goog.require('goog.log');
 goog.require('goog.math.Box');
 goog.require('goog.object');
@@ -67,7 +68,7 @@ goog.ui.editor.Bubble = function(parent, zIndex) {
 
   /**
    * Event handler for this bubble.
-   * @type {goog.events.EventHandler.<!goog.ui.editor.Bubble>}
+   * @type {goog.events.EventHandler<!goog.ui.editor.Bubble>}
    * @private
    */
   this.eventHandler_ = new goog.events.EventHandler(this);
@@ -82,7 +83,7 @@ goog.ui.editor.Bubble = function(parent, zIndex) {
 
   /**
    * Maps panel ids to panels.
-   * @type {Object.<goog.ui.editor.Bubble.Panel_>}
+   * @type {Object<goog.ui.editor.Bubble.Panel_>}
    * @private
    */
   this.panels_ = {};
@@ -197,9 +198,9 @@ goog.ui.editor.Bubble.prototype.getContainerElement = function() {
 
 
 /**
- * @return {goog.events.EventHandler.<T>} The event handler.
+ * @return {goog.events.EventHandler<T>} The event handler.
  * @protected
- * @this T
+ * @this {T}
  * @template T
  */
 goog.ui.editor.Bubble.prototype.getEventHandler = function() {
@@ -215,6 +216,15 @@ goog.ui.editor.Bubble.prototype.handleWindowResize_ = function() {
   if (this.isVisible()) {
     this.reposition();
   }
+};
+
+
+/**
+ * Sets whether the bubble dismisses itself when the user clicks outside of it.
+ * @param {boolean} autoHide Whether to autohide on an external click.
+ */
+goog.ui.editor.Bubble.prototype.setAutoHide = function(autoHide) {
+  this.popup_.setAutoHide(autoHide);
 };
 
 
@@ -277,7 +287,8 @@ goog.ui.editor.Bubble.prototype.addPanel = function(type, title, targetElement,
   if (numPanels == 1) {
     this.openBubble_();
   } else if (numPanels == 2) {
-    goog.dom.classlist.add(this.bubbleContainer_,
+    goog.dom.classlist.add(
+        goog.asserts.assert(this.bubbleContainer_),
         goog.getCssName('tr_multi_bubble'));
   }
   this.reposition();
@@ -297,7 +308,8 @@ goog.ui.editor.Bubble.prototype.removePanel = function(id) {
 
   var numPanels = goog.object.getCount(this.panels_);
   if (numPanels <= 1) {
-    goog.dom.classlist.remove(this.bubbleContainer_,
+    goog.dom.classlist.remove(
+        goog.asserts.assert(this.bubbleContainer_),
         goog.getCssName('tr_multi_bubble'));
   }
 
@@ -349,7 +361,8 @@ goog.ui.editor.Bubble.prototype.handlePopupHide = function() {
 
   // Update the state to reflect no panels.
   this.panels_ = {};
-  goog.dom.classlist.remove(this.bubbleContainer_,
+  goog.dom.classlist.remove(
+      goog.asserts.assert(this.bubbleContainer_),
       goog.getCssName('tr_multi_bubble'));
 
   this.eventHandler_.removeAll();
@@ -383,6 +396,16 @@ goog.ui.editor.Bubble.VERTICAL_CLEARANCE_ = goog.userAgent.IE ? 4 : 2;
 goog.ui.editor.Bubble.MARGIN_BOX_ = new goog.math.Box(
     goog.ui.editor.Bubble.VERTICAL_CLEARANCE_, 0,
     goog.ui.editor.Bubble.VERTICAL_CLEARANCE_, 0);
+
+
+/**
+ * Returns the margin box.
+ * @return {goog.math.Box}
+ * @protected
+ */
+goog.ui.editor.Bubble.prototype.getMarginBox = function() {
+  return goog.ui.editor.Bubble.MARGIN_BOX_;
+};
 
 
 /**
@@ -469,8 +492,17 @@ goog.ui.editor.Bubble.prototype.positionAtAnchor_ = function(
   }
   return goog.positioning.positionAtAnchor(
       targetElement, targetCorner, this.bubbleContainer_,
-      bubbleCorner, null, goog.ui.editor.Bubble.MARGIN_BOX_, overflow);
+      bubbleCorner, null, this.getMarginBox(), overflow,
+      null, this.getViewportBox());
 };
+
+
+/**
+ * Returns the viewport box to use when positioning the bubble.
+ * @return {goog.math.Box}
+ * @protected
+ */
+goog.ui.editor.Bubble.prototype.getViewportBox = goog.functions.NULL;
 
 
 
@@ -513,7 +545,7 @@ goog.ui.editor.Bubble.Panel_ = function(dom, id, type, title, targetElement,
       {className: goog.getCssName('tr_bubble_panel'), id: id},
       dom.createDom(goog.dom.TagName.DIV,
           {className: goog.getCssName('tr_bubble_panel_title')},
-          title + ':'), // TODO(robbyw): Does this work properly in bidi?
+          title ? title + ':' : ''), // TODO(robbyw): Does this work in bidi?
       dom.createDom(goog.dom.TagName.DIV,
           {className: goog.getCssName('tr_bubble_panel_content')}));
 };

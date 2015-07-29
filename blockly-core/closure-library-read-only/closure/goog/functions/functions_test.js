@@ -223,6 +223,23 @@ function testWithReturnValue() {
   assertFalse(goog.functions.withReturnValue(f, false).call(obj, 1, 2));
 }
 
+function testEqualTo() {
+  assertTrue(goog.functions.equalTo(42)(42));
+  assertFalse(goog.functions.equalTo(42)(13));
+  assertFalse(goog.functions.equalTo(42)('a string'));
+
+  assertFalse(goog.functions.equalTo(42)('42'));
+  assertTrue(goog.functions.equalTo(42, true)('42'));
+
+  assertTrue(goog.functions.equalTo(0)(0));
+  assertFalse(goog.functions.equalTo(0)(''));
+  assertFalse(goog.functions.equalTo(0)(1));
+
+  assertTrue(goog.functions.equalTo(0, true)(0));
+  assertTrue(goog.functions.equalTo(0, true)(''));
+  assertFalse(goog.functions.equalTo(0, true)(1));
+}
+
 function makeCallOrderLogger(name, returnValue) {
   return function() {
     callOrder.push(name);
@@ -293,4 +310,16 @@ function testCacheReturnValueFlagDisabled() {
   assertEquals(2, cachedRecordedFunction());
   assertEquals(2, recordedFunction.getCallCount());
   assertEquals(3, cachedRecordedFunction());
+}
+
+
+function testOnce() {
+  var recordedFunction = goog.testing.recordFunction();
+  var f = goog.functions.once(recordedFunction);
+
+  assertEquals(0, recordedFunction.getCallCount());
+  f();
+  assertEquals(1, recordedFunction.getCallCount());
+  f();
+  assertEquals(1, recordedFunction.getCallCount());
 }

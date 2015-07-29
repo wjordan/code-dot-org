@@ -91,10 +91,14 @@ goog.debug.Logger = function(name) {
 
   /**
    * Handlers that are listening to this logger.
-   * @private {Array.<Function>}
+   * @private {Array<Function>}
    */
   this.handlers_ = null;
 };
+
+
+/** @const */
+goog.debug.Logger.ROOT_LOGGER_NAME = '';
 
 
 /**
@@ -107,7 +111,7 @@ goog.define('goog.debug.Logger.ENABLE_HIERARCHY', true);
 
 if (!goog.debug.Logger.ENABLE_HIERARCHY) {
   /**
-   * @type {!Array.<Function>}
+   * @type {!Array<Function>}
    * @private
    */
   goog.debug.Logger.rootHandlers_ = [];
@@ -257,7 +261,7 @@ goog.debug.Logger.Level.ALL = new goog.debug.Logger.Level('ALL', 0);
 
 /**
  * The predefined levels.
- * @type {!Array.<!goog.debug.Logger.Level>}
+ * @type {!Array<!goog.debug.Logger.Level>}
  * @final
  */
 goog.debug.Logger.Level.PREDEFINED_LEVELS = [
@@ -355,7 +359,7 @@ goog.debug.Logger.getLogger = function(name) {
 
 /**
  * Logs a message to profiling tools, if available.
- * {@see http://code.google.com/webtoolkit/speedtracer/logging-api.html}
+ * {@see https://developers.google.com/web-toolkit/speedtracer/logging-api}
  * {@see http://msdn.microsoft.com/en-us/library/dd433074(VS.85).aspx}
  * @param {string} msg The message to log.
  */
@@ -552,8 +556,10 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
  * @param {Error|Object=} opt_exception An exception associated with the
  *     message.
  * @return {!goog.debug.LogRecord} A log record.
+ * @suppress {es5Strict}
  */
-goog.debug.Logger.prototype.getLogRecord = function(level, msg, opt_exception) {
+goog.debug.Logger.prototype.getLogRecord = function(
+    level, msg, opt_exception) {
   if (goog.debug.LogBuffer.isBufferingEnabled()) {
     var logRecord =
         goog.debug.LogBuffer.getInstance().addRecord(level, msg, this.name_);
@@ -562,8 +568,6 @@ goog.debug.Logger.prototype.getLogRecord = function(level, msg, opt_exception) {
   }
   if (opt_exception) {
     logRecord.setException(opt_exception);
-    logRecord.setExceptionText(
-        goog.debug.exposeException(opt_exception, arguments.callee.caller));
   }
   return logRecord;
 };
@@ -754,6 +758,7 @@ goog.debug.Logger.prototype.addChild_ = function(name, logger) {
  * There is a single global LogManager object that is used to maintain a set of
  * shared state about Loggers and log services. This is loosely based on the
  * java class java.util.logging.LogManager.
+ * @const
  */
 goog.debug.LogManager = {};
 
@@ -761,7 +766,7 @@ goog.debug.LogManager = {};
 /**
  * Map of logger names to logger objects.
  *
- * @type {!Object.<string, !goog.debug.Logger>}
+ * @type {!Object<string, !goog.debug.Logger>}
  * @private
  */
 goog.debug.LogManager.loggers_ = {};
@@ -780,8 +785,10 @@ goog.debug.LogManager.rootLogger_ = null;
  */
 goog.debug.LogManager.initialize = function() {
   if (!goog.debug.LogManager.rootLogger_) {
-    goog.debug.LogManager.rootLogger_ = new goog.debug.Logger('');
-    goog.debug.LogManager.loggers_[''] = goog.debug.LogManager.rootLogger_;
+    goog.debug.LogManager.rootLogger_ = new goog.debug.Logger(
+        goog.debug.Logger.ROOT_LOGGER_NAME);
+    goog.debug.LogManager.loggers_[goog.debug.Logger.ROOT_LOGGER_NAME] =
+        goog.debug.LogManager.rootLogger_;
     goog.debug.LogManager.rootLogger_.setLevel(goog.debug.Logger.Level.CONFIG);
   }
 };
@@ -789,7 +796,7 @@ goog.debug.LogManager.initialize = function() {
 
 /**
  * Returns all the loggers.
- * @return {!Object.<string, !goog.debug.Logger>} Map of logger names to logger
+ * @return {!Object<string, !goog.debug.Logger>} Map of logger names to logger
  *     objects.
  */
 goog.debug.LogManager.getLoggers = function() {

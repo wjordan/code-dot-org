@@ -17,7 +17,6 @@
  * user to visually select a row and column count.
  *
  * @author robbyw@google.com (Robby Walker)
- * @author abefettig@google.com (Abe Fettig)
  * @see ../demos/dimensionpicker.html
  * @see ../demos/dimensionpicker_rtl.html
  */
@@ -179,7 +178,9 @@ goog.ui.DimensionPicker.prototype.disposeInternal = function() {
  */
 goog.ui.DimensionPicker.prototype.handleMouseMove = function(e) {
   var highlightedSizeX = this.getRenderer().getGridOffsetX(this,
-      this.isRightToLeft() ? e.target.offsetWidth - e.offsetX : e.offsetX);
+      this.isRightToLeft() ?
+          /** @type {!HTMLElement} */ (e.target).offsetWidth - e.offsetX :
+          e.offsetX);
   var highlightedSizeY = this.getRenderer().getGridOffsetY(this, e.offsetY);
 
   this.setValue(highlightedSizeX, highlightedSizeY);
@@ -215,15 +216,28 @@ goog.ui.DimensionPicker.prototype.handleKeyEvent = function(e) {
       rows--;
       break;
     case goog.events.KeyCodes.LEFT:
-      if (columns == 1) {
-        // Delegate to parent.
-        return false;
+      if (this.isRightToLeft()) {
+        columns++;
       } else {
-        columns--;
+        if (columns == 1) {
+          // Delegate to parent.
+          return false;
+        } else {
+          columns--;
+        }
       }
       break;
     case goog.events.KeyCodes.RIGHT:
-      columns++;
+      if (this.isRightToLeft()) {
+        if (columns == 1) {
+          // Delegate to parent.
+          return false;
+        } else {
+          columns--;
+        }
+      } else {
+        columns++;
+      }
       break;
     default:
       return goog.ui.DimensionPicker.superClass_.handleKeyEvent.call(this, e);

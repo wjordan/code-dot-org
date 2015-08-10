@@ -161,14 +161,14 @@ Default: http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml
     - New JS code in our Rails apps should go in a .js file, not inline in
   the view; this will be enforced by code review.
 
-   - If modify inline JS code in a template, please move it out of
-      the file as part of the same CL.  (Exceptions can be granted on
-      a case by case basis.)
+    - If you modify inline JS code in a template, please move it out
+      of the file as part of the same CL.  (Exceptions can be granted
+      on a case by case basis.)
 
-   - Server-side configuration information that needs to be shared
-     with Javascript code should be put in app_options. (The have
-     templates that conversion app_options to json and assigned it to
-     a JS variable.)
+    - Server-side configuration information that needs to be shared
+      with Javascript code should be put in `app_options`. The standard
+      templates include a script tag which assigns app_options to
+      a Javascript variable so that it as accessible from JS.
 
 ### In /apps
 

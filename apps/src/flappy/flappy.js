@@ -493,8 +493,8 @@ Flappy.init = function(config) {
 
   config.grayOutUndeletableBlocks = level.grayOutUndeletableBlocks;
 
-  config.pinWorkspaceToBottom = false;
-  config.hasVerticalScrollbars = false;
+  config.pinWorkspaceToBottom = true;
+  config.hasVerticalScrollbars = true;
 
   loadLevel();
 

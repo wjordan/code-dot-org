@@ -166,7 +166,7 @@ Default: http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml
       on a case by case basis.)
 
     - Server-side configuration information that needs to be shared
-      with Javascript code should be put in `app_options`. The standard
+      with Javascript code should be put in `app_options`. Our
       templates include a script tag which assigns app_options to
       a Javascript variable so that it as accessible from JS.
 

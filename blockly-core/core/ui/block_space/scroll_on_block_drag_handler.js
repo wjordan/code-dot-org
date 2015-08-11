@@ -83,7 +83,7 @@ var MOUSE_START_DISTANCE = 0;
  * Mouse distance outside of viewport side when to start fast scrolling
  * @type {number}
  */
-var MOUSE_START_FAST_DISTANCE = 35;
+var MOUSE_START_FAST_DISTANCE = 8;
 
 /**
  * Distance from block edge to side when to start slow scrolling

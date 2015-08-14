@@ -6,7 +6,7 @@ module AWS
     # Creates an S3 client using the the official AWS SDK for Ruby v2 and
     # the credentials specified in the CDO config.
     # @return [Aws::S3::Client]
-    def self.create_client
+    def self.connect_v2!
       s3_params = {access_key_id: CDO.s3_access_key_id,
                    secret_access_key: CDO.s3_secret_access_key,
                    region: 'us-east-1'}
@@ -18,7 +18,7 @@ module AWS
     # @param [String] key
     # @return [String]
     def self.download_from_bucket(bucket, key, options={})
-      create_client.get_object(bucket: bucket, key: name).body
+      connect_v2!.get_object(bucket: bucket, key: key).body.string
     end
 
     # Sets the value of a key in the given S3 bucket.
@@ -31,7 +31,7 @@ module AWS
     # @return [String] The key of the new value, derived from filename.
     def self.upload_to_bucket(bucket, filename, data, options={})
       filename = "#{SecureRandom.hex}-#{filename}" unless options[:no_random]
-      create_client.put_object(bucket: bucket, key: filename, body: data)
+      connect_v2!.put_object(bucket: bucket, key: filename, body: data)
       filename
     end
   end

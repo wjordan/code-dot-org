@@ -33,7 +33,7 @@ class LevelsControllerTest < ActionController::TestCase
     get :new, type: 'Karel'
 
     css = css_select "#level_type"
-    assert_equal "Karel", css.first.attributes['value']
+    assert_equal "Karel", css.first.attributes['value'].to_s
     assert_response :success
   end
 
@@ -268,7 +268,8 @@ class LevelsControllerTest < ActionController::TestCase
     get :edit, id: level.id
 
     assert_equal 'config/scripts/test_external_markdown.external', assigns(:level).filename
-    assert_equal "encrypted", assigns(:level).dsl_text.split("\n").first.split(" ").first
+    assert_equal "name", assigns(:level).dsl_text.split("\n").first.split(" ").first
+    assert_equal "encrypted", assigns(:level).dsl_text.split("\n")[1].split(" ").first
   end
 
   test "should update level" do
@@ -292,7 +293,7 @@ class LevelsControllerTest < ActionController::TestCase
   test "should use level for route helper" do
     level = create(:artist)
     get :edit, id: level
-    css = css_select "form[action=#{level_path(level)}]"
+    css = css_select "form[action=\"#{level_path(level)}\"]"
     assert_not css.empty?
   end
 
@@ -317,7 +318,7 @@ class LevelsControllerTest < ActionController::TestCase
     skins = level.class.skins
     get :edit, id: level, game_id: level.game
     skin_select = css_select "#level_skin option"
-    values = skin_select.map { |option| option.attributes["value"] }
+    values = skin_select.map { |option| option.attributes["value"].to_s }
     assert_equal skins, values
   end
 

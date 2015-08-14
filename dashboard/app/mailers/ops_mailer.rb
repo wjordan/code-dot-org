@@ -9,7 +9,6 @@ class OpsMailer < ActionMailer::Base
     @cohort = cohort
     @added_teachers = added_teachers
     @removed_teachers = removed_teachers
-
     subject = "[ops notification] #{district_contact.ops_first_name} #{district_contact.ops_last_name} modified #{cohort.name}"
 
     mail content_type: 'text/html', subject: subject
@@ -36,9 +35,15 @@ class OpsMailer < ActionMailer::Base
     # program_type was originally stored as a string in the db, but was later changed to an id that maps to activity_constants.
     # The datatype in MySql was never changed, so for now you have to coerce it to an integer
     @workshop[:program_type] = ActivityConstants::PROGRAM_TYPES[workshop[:program_type].to_i]
+    @workshop[:phase] = ActivityConstants::PHASES[workshop[:phase]]
+    subject = "Important: Your #{@workshop[:phase][:short_name]} workshop is coming up."
+    if @workshop[:phase][:prerequisite_phase]
+      @workshop[:prerequisite_phase] = ActivityConstants::PHASES[@workshop[:phase][:prerequisite_phase]]
+      subject += " Complete #{@workshop[:prerequisite_phase][:short_name]}"
+    end
     @recipient = recipient
     @recipient_ops_data = recipient_ops_data
-    subject = "[Reminder] You have a Code.org workshop in 2 weeks."
+
     mail content_type: 'text/html', subject: subject, to: 'andre@code.org'
   end
 end

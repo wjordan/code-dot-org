@@ -1,16 +1,18 @@
 require 'minitest/autorun'
 require 'rack/test'
 require File.expand_path '../../../deployment', __FILE__
-require File.expand_path '../../middleware/assets_api', __FILE__
+require File.expand_path '../../middleware/files_api', __FILE__
 require File.expand_path '../../middleware/channels_api', __FILE__
 
 ENV['RACK_ENV'] = 'test'
 
 class AssetsTest < Minitest::Unit::TestCase
 
-  def test_assets
+  def setup
     init_apis
+  end
 
+  def test_assets
     channel_id = create_channel
 
     ensure_aws_credentials(channel_id)
@@ -19,7 +21,7 @@ class AssetsTest < Minitest::Unit::TestCase
     image_body = 'stub-image-contents'
 
     actual_image_info = JSON.parse(put(channel_id, image_filename, image_body, 'image/jpeg'))
-    expected_image_info = {'filename' =>  image_filename, 'category' =>  'image', 'size' =>  image_body.length}
+    expected_image_info = {'filename' => image_filename, 'category' => 'image', 'size' => image_body.length}
     assert_fileinfo_equal(expected_image_info, actual_image_info)
 
     sound_filename = 'woof.mp3'
@@ -32,6 +34,9 @@ class AssetsTest < Minitest::Unit::TestCase
     file_infos = JSON.parse(list(channel_id))
     assert_fileinfo_equal(actual_image_info, file_infos[0])
     assert_fileinfo_equal(actual_sound_info, file_infos[1])
+
+    get(channel_id, image_filename)
+    assert_equal 'public, max-age=3600', @assets.last_response['Cache-Control']
 
     delete(channel_id, image_filename)
     assert @assets.last_response.successful?
@@ -63,8 +68,6 @@ class AssetsTest < Minitest::Unit::TestCase
   end
 
   def test_assets_copy_all
-    init_apis
-
     src_channel_id = create_channel
     dest_channel_id = create_channel
 
@@ -93,6 +96,11 @@ class AssetsTest < Minitest::Unit::TestCase
     delete_channel(dest_channel_id)
   end
 
+  def test_copy_all_with_no_src
+    copy_all(nil, create_channel)
+    assert @assets.last_response.bad_request?
+  end
+
   # Methods below this line are test utilities, not actual tests
   private
 
@@ -100,7 +108,7 @@ class AssetsTest < Minitest::Unit::TestCase
     # The Assets API does not *currently* need to share a cookie jar with the Channels API,
     # but it may once we restrict put, delete and list operations to the channel owner.
     @channels ||= Rack::Test::Session.new(Rack::MockSession.new(ChannelsApi, "studio.code.org"))
-    @assets ||= Rack::Test::Session.new(Rack::MockSession.new(AssetsApi, "studio.code.org"))
+    @assets ||= Rack::Test::Session.new(Rack::MockSession.new(FilesApi, "studio.code.org"))
   end
 
   def create_channel

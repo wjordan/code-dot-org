@@ -263,11 +263,12 @@
       free_play:
         playlab: Utwórz aplikację
         artist: Narysuj cokolwiek
+        calculate: Calculate Something
     user:
       classroom: Domowa strona nauczyciela
       district_dashboard: Panel dzielnicy/okręgu
       label: Witaj %{username}
-      stats: Moje postępy
+      stats: Studio Kodowania (Code Studio)
       settings: Moje konto
       prizes: Nagrody
       logout: Wyloguj się
@@ -408,6 +409,7 @@
     local_school: miejscowa szkoła
     online: online
     see_details: Zobacz szczegóły
+    view_course: Zobacz Kurs
     prize_info: 'Nagrody za udział (tylko nauczyciele szkół publicznych w USA): do
       1000 $ na klasę.'
     tryfirst: 'Lub, możesz najpierw spróbować, a zarejestrujesz się później:'
@@ -420,13 +422,18 @@
     try_beta_courses: Nowość! Wypróbuj nasze beta kursy dla uczniów w K-5
     use_as_teacher: Korzystaj z tej strony jako nauczyciel
     heading_hoc2014: <h2>Godzina kodowania dla</h2><h1>Wszystkich grup wiekowych</h1>
-    heading_elementary: <h2>20-godzinne kursy dla</h2><h1>Początkujących (w każdym
+    heading_elementary: <h2>20-godzinne kursy z</h2><h1>Podstaw informatyki (w każdym
       wieku)</h1>
     heading_apps: <h2>Zabawy dla</h2><h1>Wszystkich</h1>
     heading_legacy: <h2>Nasz przyspieszony kurs dla</h2><h1>Wszystkich grup wiekowych</h1>
     your_gallery: Galeria
-    no_primary_course: Wypróbuj kurs w Studio Kodowania
+    no_primary_course: Wypróbuj kurs w Code Studio
+    choose_next_course: Wypróbuj jeden z poniższych kursów w Code Studio
     print_certificate: Drukuj Certyfikat
+  share:
+    title: Learn on Code Studio
+    description: Anyone can learn computer science. Make games, apps and art with
+      code.
   gender:
     male: Mężczyzna
     female: Kobieta
@@ -435,12 +442,20 @@
     student: Uczeń
     teacher: Nauczyciel
   footer:
+    thank_you: We thank our <a href="https://code.org/about/donors">donors</a>, <a
+      href="https://code.org/about/partners">partners</a>, our <a href="https://code.org/about/team">extended
+      team</a>, our video cast, and our <a href="https://code.org/about/advisors">education
+      advisors</a> for their support in creating Code Studio.
     help_from_html: Inżynierowie z Google, Microsoft, Facebook i Twitter pomogli utworzyć
       ten samouczek.
     art_from_html: Angry Birds&trade; & &copy; 2009-2014 Rovio Entertainment Ltd.
       Wszystkie prawa zastrzeżone. <br/> Plants vs. Zombies&trade; & &copy; 2014 Electronic
       Arts Inc. Wszystkie prawa zastrzeżone.
     powered_by_aws: Zasilany przez Amazon Web Services
+    trademark: '&copy; Code.org, %{current_year}. Code.org&reg;, the CODE logo and
+      Hour of Code&reg; are trademarks of Code.org.'
+    copyright: Prawa autorskie
+    more: Więcej
     feedback: Wyraź swoją opinię
     translate: Pomóż nam tłumaczyć na Twój język
     support: Wsparcie
@@ -462,12 +477,6 @@
     autoplay_option: Odtwarzaj filmy automatycznie
     download: Pobierz wideo
   compatability:
-    https:
-      header: Proszę włączyć obsługę protokołu HTTPS dla Code.org.
-      message: Aby zwiększyć bezpieczeństwo, przestawiamy się na https na %{https_date}.
-        Nie będziesz w stanie uzyskać dostęp do Code.org po tej dacie. <a href='%{it_requirements_url}'>
-        Kliknij tutaj</a>, aby dowiedzieć się, jak włączyć HTTPS dla Code.org.
-      hide_this_warning: Ukryj to ostrzeżenie
     working:
       header: Pracujemy nad wsparciem dla Twojej przeglądarki.
       message: Code.org wykorzystuje nowoczesną technologię sieciową. Dzięki temu
@@ -497,7 +506,7 @@
   video_coming_soon: Wkrótce wideo!
   share_code:
     title: Kliknij "Uruchom", aby zobaczyć mój program w akcji
-    bounce_og_title: Sprawdź moją grę Bounce
+    bounce_og_title: Sprawdź moją grę w odbijanie
     flappy_og_title: Sprawdź moją grę Flappy
     studio_og_title: Sprawdź moją Play Lab aplikację
     check_out_what_i_made: Sprawdź, co zrobiłem
@@ -600,6 +609,11 @@
     open_response_body: Dzięki za odpowiedź!
   dialog:
     ok: OK
+    startover_title: Czy na pewno chcesz zacząć od nowa?
+    startover_body: This will reset the puzzle to its start state and reset all the
+      data you've added or changed.
+    startover_ok: Zacznij od nowa
+    startover_cancel: Anuluj
   time:
     hour: 1 godzina
     day: dzień

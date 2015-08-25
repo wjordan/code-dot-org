@@ -12,6 +12,9 @@ var blockUtils = require('./block_utils');
 var DropletTooltipManager = require('./blockTooltips/DropletTooltipManager');
 var url = require('url');
 var FeedbackUtils = require('./feedback');
+var smallFooterUtils = require('@cdo/shared/smallFooter');
+var React = require('react');
+var VersionHistory = require('./templates/VersionHistory.jsx');
 
 /**
 * The minimum width of a playable whole blockly game.
@@ -298,7 +301,7 @@ StudioApp.prototype.init = function(config) {
       viz.style['max-height'] = (displayWidth * scale) + 'px';
       viz.style.display = 'block';
       vizCol.style.width = '';
-      document.getElementById('visualizationColumn').style['max-width'] = displayWidth + 'px';
+      vizCol.style.maxWidth = displayWidth + 'px';
       // Needs to run twice on initialization
       if(!resized) {
         resized = true;
@@ -312,9 +315,6 @@ StudioApp.prototype.init = function(config) {
 
   var orientationHandler = function() {
     window.scrollTo(0, 0);  // Browsers like to mess with scroll on rotate.
-    var rotateContainer = document.getElementById('rotateContainer');
-    rotateContainer.style.width = window.innerWidth + 'px';
-    rotateContainer.style.height = window.innerHeight + 'px';
   };
   window.addEventListener('orientationchange', orientationHandler);
   orientationHandler();
@@ -330,7 +330,11 @@ StudioApp.prototype.init = function(config) {
 
   if (config.level.instructions || config.level.aniGifURL) {
     var promptIcon = document.getElementById('prompt-icon');
-    promptIcon.src = this.smallIcon;
+    if (this.smallIcon) {
+      promptIcon.src = this.smallIcon;
+    } else {
+      $('#prompt-icon-cell').hide();
+    }
 
     var bubble = document.getElementById('bubble');
     dom.addClickTouchEvent(bubble, _.bind(function() {
@@ -366,6 +370,10 @@ StudioApp.prototype.init = function(config) {
 
   if (this.isUsingBlockly()) {
     this.handleUsingBlockly_(config);
+  } else {
+    // handleUsingBlockly_ already does an onResize. We still want that goodness
+    // if we're not blockly
+    this.onResize();
   }
 
   var vizResizeBar = document.getElementById('visualizationResizeBar');
@@ -411,6 +419,44 @@ StudioApp.prototype.init = function(config) {
       }).bind(this));
     }).bind(this));
   }
+
+  // Bind listener to 'Version History' button
+  var versionsHeader = document.getElementById('versions-header');
+  if (versionsHeader) {
+    dom.addClickTouchEvent(versionsHeader, (function() {
+      var codeDiv = document.createElement('div');
+      var dialog = this.createModalDialog({
+        Dialog: this.Dialog,
+        contentDiv: codeDiv,
+        defaultBtnSelector: 'again-button',
+        id: 'showVersionsModal'
+      });
+      React.render(React.createElement(VersionHistory, {}), codeDiv);
+
+      dialog.show();
+    }).bind(this));
+  }
+
+  if (this.isUsingBlockly() && Blockly.contractEditor) {
+    Blockly.contractEditor.registerTestsFailedOnCloseHandler(function () {
+      this.feedback_.showSimpleDialog(this.Dialog, {
+        headerText: undefined,
+        bodyText: msg.examplesFailedOnClose(),
+        cancelText: msg.ignore(),
+        confirmText: msg.tryAgain(),
+        onConfirm: null,
+        onCancel: function () {
+          Blockly.contractEditor.hideIfOpen();
+        }
+      });
+
+      // return true to indicate to blockly-core that we'll own closing the
+      // contract editor
+      return true;
+    }.bind(this));
+  }
+
+  smallFooterUtils.bindHandlers();
 };
 
 StudioApp.prototype.handleClearPuzzle = function (config) {
@@ -607,7 +653,9 @@ StudioApp.prototype.inject = function(div, options) {
     assetUrl: this.assetUrl,
     rtl: this.isRtl(),
     toolbox: document.getElementById('toolbox'),
-    trashcan: true
+    trashcan: true,
+    customSimpleDialog: this.feedback_.showSimpleDialog.bind(this.feedback_,
+        this.Dialog)
   };
   Blockly.inject(div, utils.extend(defaults, options), this.cdoSounds);
 };
@@ -720,11 +768,8 @@ StudioApp.prototype.sortBlocksByVisibility = function(xmlBlocks) {
 };
 
 StudioApp.prototype.createModalDialog = function(options) {
+  options.Dialog = utils.valueOr(options.Dialog, this.Dialog);
   return this.feedback_.createModalDialog(options);
-};
-
-StudioApp.prototype.createModalDialogWithIcon = function(options) {
-  return this.feedback_.createModalDialogWithIcon(options);
 };
 
 StudioApp.prototype.showInstructions_ = function(level, autoClose) {
@@ -743,6 +788,9 @@ StudioApp.prototype.showInstructions_ = function(level, autoClose) {
     headerElement = document.createElement('h1');
     headerElement.className = 'markdown-level-header-text';
     headerElement.innerHTML = puzzleTitle;
+    if (!this.icon) {
+      headerElement.className += ' no-modal-icon';
+    }
   }
 
   instructionsDiv.innerHTML = require('./templates/instructions.html.ejs')({
@@ -780,8 +828,7 @@ StudioApp.prototype.showInstructions_ = function(level, autoClose) {
     };
   }
 
-  var dialog = this.createModalDialogWithIcon({
-    Dialog: this.Dialog,
+  var dialog = this.createModalDialog({
     contentDiv: instructionsDiv,
     icon: this.icon,
     defaultBtnSelector: '#ok-button',
@@ -832,7 +879,58 @@ StudioApp.prototype.onResize = function() {
 
   // Droplet toolbox width varies as the window size changes, so refresh:
   this.resizeToolboxHeader();
+
+  // Content below visualization is a resizing scroll area in pinned mode
+  onResizeSmallFooter();
 };
+
+/**
+ * Resizes the content area below the visualization in pinned (viewport height)
+ * view mode.
+ */
+function resizePinnedBelowVisualizationArea() {
+  var pinnedBelowVisualization = document.querySelector(
+      '#visualizationColumn.pin_bottom #belowVisualization');
+  if (!pinnedBelowVisualization) {
+    return;
+  }
+
+  var visualization = document.getElementById('visualization');
+  var gameButtons = document.getElementById('gameButtons');
+  var smallFooter = document.querySelector('.small-footer');
+
+  var top = 0;
+  if (visualization) {
+    top += $(visualization).outerHeight(true);
+  }
+
+  if (gameButtons) {
+    top += $(gameButtons).outerHeight(true);
+  }
+
+  var bottom = 0;
+  if (smallFooter) {
+    var codeApp = $('#codeApp');
+    bottom += $(smallFooter).outerHeight(true);
+    // Footer is relative to the document, not codeApp, so we need to
+    // remove the codeApp bottom offset to get the correct margin.
+    bottom -= parseInt(codeApp.css('bottom'), 10);
+  }
+
+  pinnedBelowVisualization.style.top = top + 'px';
+  pinnedBelowVisualization.style.bottom = bottom + 'px';
+}
+
+/**
+ * Debounced onResize operations that update the layout to support sizing
+ * to viewport height and using the small footer.
+ * @type {Function}
+ */
+var onResizeSmallFooter = _.debounce(function () {
+  resizePinnedBelowVisualizationArea();
+  smallFooterUtils.repositionCopyrightFlyout();
+  smallFooterUtils.repositionMoreMenu();
+}, 10);
 
 StudioApp.prototype.onMouseDownVizResizeBar = function (event) {
   // When we see a mouse down in the resize bar, start tracking mouse moves:
@@ -906,6 +1004,22 @@ StudioApp.prototype.onMouseMoveVizResizeBar = function (event) {
   if (visualizationEditor) {
     visualizationEditor.style.marginLeft = newVizWidthString;
   }
+
+  var smallFooter = document.querySelector('.small-footer');
+  if (smallFooter) {
+    smallFooter.style.maxWidth = newVizWidthString;
+
+    // If the small print and language selector are on the same line,
+    // the small print should float right.  Otherwise, it should float left.
+    var languageSelector = smallFooter.querySelector('form');
+    var smallPrint = smallFooter.querySelector('small');
+    if (smallPrint.offsetTop === languageSelector.offsetTop) {
+      smallPrint.style.float = 'right';
+    } else {
+      smallPrint.style.float = 'left';
+    }
+  }
+
   // Fire resize so blockly and droplet handle this type of resize properly:
   utils.fireResizeEvent();
 };
@@ -1002,8 +1116,7 @@ StudioApp.prototype.getTestResults = function(levelComplete, options) {
 StudioApp.prototype.builderForm_ = function(onAttemptCallback) {
   var builderDetails = document.createElement('div');
   builderDetails.innerHTML = require('./templates/builder.html.ejs')();
-  var dialog = this.createModalDialogWithIcon({
-    Dialog: this.Dialog,
+  var dialog = this.createModalDialog({
     contentDiv: builderDetails,
     icon: this.icon
   });
@@ -1250,8 +1363,11 @@ StudioApp.prototype.configureDom = function (config) {
       config.level.disableParamEditing = false;
       config.level.disableVariableEditing = false;
     }
+
     if (config.pinWorkspaceToBottom) {
-      document.body.style.overflow = "hidden";
+      var bodyElement = document.body;
+      bodyElement.style.overflow = "hidden";
+      bodyElement.className = bodyElement.className + " pin_bottom";
       container.className = container.className + " pin_bottom";
       visualizationColumn.className = visualizationColumn.className + " pin_bottom";
       codeWorkspace.className = codeWorkspace.className + " pin_bottom";
@@ -1270,6 +1386,7 @@ StudioApp.prototype.configureDom = function (config) {
   }
 
   if (config.embed && config.hideSource) {
+    container.className = container.className + " embed_hidesource";
     visualizationColumn.className = visualizationColumn.className + " embed_hidesource";
   }
 
@@ -1277,6 +1394,10 @@ StudioApp.prototype.configureDom = function (config) {
     // Make the visualization responsive to screen size, except on share page.
     visualization.className += " responsive";
     visualizationColumn.className += " responsive";
+    var smallFooter = document.querySelector(".small-footer");
+    if (smallFooter) {
+      smallFooter.className += " responsive";
+    }
   }
 };
 
@@ -1526,8 +1647,11 @@ StudioApp.prototype.handleUsingBlockly_ = function (config) {
     disableExamples: utils.valueOr(config.level.disableExamples, false),
     defaultNumExampleBlocks: utils.valueOr(config.level.defaultNumExampleBlocks, 2),
     scrollbars: config.level.scrollbars,
+    hasVerticalScrollbars: config.hasVerticalScrollbars,
+    hasHorizontalScrollbars: config.hasHorizontalScrollbars,
     editBlocks: utils.valueOr(config.level.edit_blocks, false),
-    readOnly: utils.valueOr(config.readonlyWorkspace, false)
+    readOnly: utils.valueOr(config.readonlyWorkspace, false),
+    showExampleTestButtons: utils.valueOr(config.showExampleTestButtons, false)
   };
   ['trashcan', 'varsInGlobals', 'grayOutUndeletableBlocks',
     'disableParamEditing'].forEach(
@@ -1618,13 +1742,36 @@ StudioApp.prototype.hasUnfilledFunctionalBlock = function () {
  *   if there isn't one.
  */
 StudioApp.prototype.getUnfilledFunctionalBlock = function () {
+  return this.getFilteredUnfilledFunctionalBlock_(function (rootBlock) {
+    return rootBlock.type !== 'functional_example';
+  });
+};
+
+/**
+ * @returns {Block} The first example block that has an unfilled input, or
+ *   undefined if there isn't one. Ignores example blocks that don't have a
+ *   call portion, as these are considered invalid.
+ */
+StudioApp.prototype.getUnfilledFunctionalExample = function () {
+  return this.getFilteredUnfilledFunctionalBlock_(function (rootBlock) {
+    if (rootBlock.type !== 'functional_example') {
+      return false;
+    }
+    var actual = rootBlock.getInputTargetBlock('ACTUAL');
+    return actual && actual.getTitleValue('NAME');
+  });
+};
+
+/**
+ * @param {function} filter Run against root block in chain. Returns true if
+ *   this is a block we care about
+ */
+StudioApp.prototype.getFilteredUnfilledFunctionalBlock_ = function (filter) {
   var unfilledBlock;
   Blockly.mainBlockSpace.getAllBlocks().some(function (block) {
     // Get the root block in the chain
     var rootBlock = block.getRootBlock();
-
-    // Allow example blocks to have unfilled inputs
-    if (rootBlock.type === 'functional_example') {
+    if (!filter(rootBlock)) {
       return false;
     }
 
@@ -1635,6 +1782,43 @@ StudioApp.prototype.getUnfilledFunctionalBlock = function () {
   });
 
   return unfilledBlock;
+};
+
+/**
+ * @returns {string} The name of a function that doesn't have any examples, or
+ *   undefined if all have at least one.
+ */
+StudioApp.prototype.getFunctionWithoutTwoExamples = function () {
+  var definitionNames = Blockly.mainBlockSpace.getTopBlocks().filter(function (block) {
+    return block.type === 'functional_definition' && !block.isVariable();
+  }).map(function (definitionBlock) {
+    return definitionBlock.getProcedureInfo().name;
+  });
+
+  var exampleNames = Blockly.mainBlockSpace.getTopBlocks().filter(function (block) {
+    if (block.type !== 'functional_example') {
+      return false;
+    }
+
+    // Only care about functional_examples that have an ACTUAL input (i.e. it's
+    // clear which function they're for
+    var actual = block.getInputTargetBlock('ACTUAL');
+    return actual && actual.getTitleValue('NAME');
+  }).map(function (exampleBlock) {
+    return exampleBlock.getInputTargetBlock('ACTUAL').getTitleValue('NAME');
+  });
+
+  var definitionWithLessThanTwoExamples;
+  definitionNames.forEach(function (def) {
+    var definitionExamples = exampleNames.filter(function(example) {
+      return def === example;
+    });
+
+    if (definitionExamples.length < 2) {
+      definitionWithLessThanTwoExamples = def;
+    }
+  });
+  return definitionWithLessThanTwoExamples;
 };
 
 /**
@@ -1667,6 +1851,44 @@ StudioApp.prototype.getUnfilledFunctionalBlockError = function (topLevelType) {
   } else {
     return msg.emptyBlockInFunction({name: procedureInfo.name});
   }
+};
+
+/**
+ * Looks for failing examples, and updates the result text for them if they're
+ * open in the contract editor
+ * @param {function} failureChecker Apps example tester that takes in an example
+ *   block, and outputs a failure string (or null if success)
+ * @returns {string} Name of block containing first failing example we found, or
+ *   empty string if no failures.
+ */
+StudioApp.prototype.checkForFailingExamples = function (failureChecker) {
+  var failingBlockName = '';
+  Blockly.mainBlockSpace.findFunctionExamples().forEach(function (exampleBlock) {
+    var failure = failureChecker(exampleBlock, false);
+
+    // Update the example result. No-op if we're not currently editing this
+    // function.
+    Blockly.contractEditor.updateExampleResult(exampleBlock, failure);
+
+    if (failure) {
+      failingBlockName = exampleBlock.getInputTargetBlock('ACTUAL')
+        .getTitleValue('NAME');
+    }
+  });
+  return failingBlockName;
+};
+
+/**
+ * @returns {boolean} True if we have a function or variable named "" (empty string)
+ */
+StudioApp.prototype.hasEmptyFunctionOrVariableName = function () {
+  return Blockly.mainBlockSpace.getTopBlocks().some(function (block) {
+    if (block.type !== 'functional_definition') {
+      return false;
+    }
+
+    return !(block.getProcedureInfo().name);
+  });
 };
 
 StudioApp.prototype.createCoordinateGridBackground = function (options) {

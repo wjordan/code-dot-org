@@ -7,117 +7,12 @@ nav: about_nav
 
 **We are currently hiring for:**
 
-- [Customer Support Associate](#support)	
-- [Curriculum Writer](#writer)
-- [Data Engineer](#data-engineer)
 - [District Manager (Seattle, New York City)](#reg-PM)
 - [Evaluation Manager](#Eval)
+- [Operations Coordinator](#opscoord)
 - [Software Engineer](#engineer)
 
 **[Working at Code.org](#info)**
-
-## <a name="support" href="#support">Customer Support Associate (Seattle, WA)</a>
-
-**Job Summary:**
-
-Code.org is looking for for a tech-savvy customer support associate who is passionate about helping others. This is a full-time position for a candidate who can effectively solve customer issues and positively represent Code.org. 
-
-Responsibilities of the position include:
-
-- Managing end-to-end customer support for Code.org including answering tickets, developing resources such as customer FAQ, and setting and measuring metrics for support 
-- Answering forum questions and providing clear, friendly guidance on behalf of Code.org
-- Trouble shooting and reproducing customer bugs; escalating issues to the development, education, or operations teams when necessary
-- Providing additional support to the operations team (i.e. helping with workshop planning, coordination and communications) as needed 
-
-**Skills & Qualifications:**
-
-The ideal candidate has the following qualifications:
-
-- 1-2 years experience using ZenDesk and/or customer service in a tech environment
-- Strong technical aptitude and ability to learn and utilize technology to solve problems quickly  
-- Excellent written and verbal communication skills
-- Bachelors degree preferred  
-- Background in education and communicating with educators preferred
-- Experience managing online forums a plus
-
-This person must be able to work in a fast paced environment while maintaining our excellent standard for customer service.
-
-Email resume and cover letter or LinkedIn profile to <a href="mailto:jobs@code.org">jobs@code.org</a>.
-
-## <a name="support" href="#writer">Curriculum Writer (Seattle, WA)</a>
-
-
-**Job Summary:**
-
-Code.org is looking for an experienced Curriculum Writer to work with and support the goals of Code.org’s Education team through the development of computer science curriculum. We are looking for someone to help develop curriculum as a full-time, long-term assignment (a one-to-two year term). While each Education team member takes ownership of large parts of projects, we share work and tasks across projects to make sure all of our projects are aligned under the same philosophical model and contribute to a cohesive K-12 CS pathway. 
-
-Responsibilities of the position include:
-
-- Working closely with the Education team to design, develop, write, and “go to market” with original curricular materials (lesson plans, formative/summative assessments, and videos).
-- Planning for evaluating the effectiveness of curriculum (from both student and teacher perspectives) and making programmatic improvements.
-- Collaborating with the Product team to develop curriculum-specific technology tools and using the tools to create tutorials and projects.
-
-**Skills & Qualifications:**
-
-The ideal candidate has experience designing, developing, and writing computer science curriculum to standards; has strong leadership, writing and communications skills; is a tech-savvy self-starter who is able to multi-task and excel under pressure.
-
-The candidate should also have: 
-
-- Comprehensive knowledge of computer science (required) 
-- Prior curriculum writing experience / activity design (required)
-- a Bachelor’s degree or higher in Education or Computer Science (preferred)
-- Recent computer science or STEM teaching experience in high school field (preferred)
-- Experience using the Understanding by Design curriculum framework (preferred)  
-- Experience/familiarity with the CS Principles Framework (preferred) 
-- Experience/familiarity with Exploring Computer Science curriculum/PD (preferred) 
-- Proficiency in working with Microsoft Office and Google Docs (required) 
-
-Ability and willingness to travel up to 10% of time is required. 
-
-Email resume and cover letter or LinkedIn profile to <a href="mailto:jobs@code.org">jobs@code.org</a>.
-
-
-## <a name="data-engineer" href="#data-engineer">Data Engineer (Seattle, WA preferred)</a>
-
-**Job Summary:**
-
-At Code.org we create and support computer science curriculum that reaches millions of students, and we train tens of thousands of teachers per year. The core function of the Data Engineer role is to help us gain an increasingly deeper and better understanding of two very important high-level questions:  
-
-1.  What and how much are our students learning? (and how can we improve the outcome?)
-2. How effective is our teacher professional development? (and how can we improve the outcome?)
-
-We already have tons of indicators and stats and data, but these very big questions go beyond a few database queries or analytics stats.  We have a fantastic third party evaluator helping us research these questions, and this is a role to collaborate with them to address these questions from the perspective of the web-usage of millions of students in our online tutorials. 
-
-The responsibility in this job isn't just to answer analytic questions, but to help establish the questions to ask in the first place, and then to figure out how to answer them, to measure and adjust our education products, services, and processes to improve outcomes for students, teachers and schools. 
-
-At its core this is primarily an engineering role. Job responsibilities will include:
-
-- Owning and operating our existing in-house analytics tools and identifying new tools/services to use
-- Working collaboratively with others to craft measurement protocols and and assessments we use to track student learning and teacher preparedness across Code.org's online services
-- Working with education/curriculum/product team to “bake” assessment measures and metrics into curricular and professional development products currently under development 
-- Writing the code/scripts/queries and managing the tools and infrastructure to answer these questions and provide these measures
-- Collaborating with Evaluation Manager and our third party evaluator to help evaluate and improve our work, as well as with university/academic groups to provide deeper research to help drive key insights which improve the outcomes of our work and the computer science education community as a whole
-
-
-**Skills and Qualifications:**
-
-The ideal candidate has a breadth of experience and qualifications:
-
-- A degree in computer science, applied math, or statistics, with multiple years of experience in data and statistical analysis
-- A deep familiarity with traditional web-based analytics and data analysis tools - from Google Analytics to data mining to Hadoop to R. The ideal candidate should already know the best tools to use for different purposes based on past experience, and is familiar with recent cloud-based services that make this sort of analysis easier today than in past decades. (Knowing the difference between Cloudera, Splunk, and Redshift is ideally something you already have under your belt from your previous job)
-- Experience with using web-based analysis (A/B testing and growth-hacking) to measure/improve online usage
-
-
-Optional, but nice-to-have, at least one of the following types of experience:
-
-- Experience with using online student assessments to do analysis in a way that aligns with academic norms and standards
-- Experience with evaluation of education efforts and academic learning outcomes
-
-
-Ideally the position is in Seattle, but for an exceptional candidate working remotely from a home-office is a possibility.
-
-
-Email resume and cover letter or LinkedIn profile to <a href="mailto:jobs@code.org">jobs@code.org</a>.
 
 
 ## <a name="reg-PM" href="#reg-PM">District Manager (Seattle, New York City)</a>
@@ -177,6 +72,31 @@ The ideal candidate has the following qualifications:
 - Professional demeanor, possessing excellent communication, organizational, project management and interpersonal skills
 - Must be a self-starter, able to multi-task, excel under pressure, and work independently with a geographically dispersed team. 
 - A high level of computer literacy is required; proficiency in working with Microsoft Office and Google Docs a must, especially spreadsheets.
+
+Email resume, cover letter, and/or LinkedIn profile to <a href="mailto:jobs@code.org">jobs@code.org</a>.
+
+## <a name="opscoord" href="#opscoord">Operations Coordinator (Seattle, WA)</a>
+
+**Job Summary:**
+
+Code.org is looking for an Operations Coordinator to join Code.org’s operations team. Our operations team is responsible for the success of Code.org professional development across the U.S. This is a full time, exempt position based in our Seattle office. Duties of this role include: 
+
+- Coordinating event logistics (dates, location, travel, accommodations, catering); acting as primary logistics point-of-contact
+- Drafting communications to stakeholders, responding to requests for information, distributing materials externally
+- Updating and managing event attendee lists
+- Utilizing our customer service system to respond to professional development questions from teachers in a timely manner
+- Attending and participating in meetings and recording notes/follow-up items, as appropriate
+- Special projects (perform research, prepare documentation, develop templates, etc.)
+
+
+**Skills and Qualifications:**
+
+We are looking for a self-starter, skilled in event planning, able to multi-task cheerfully, excel under pressure, and work independently with a geographically dispersed team. Must be extremely detail-oriented, possess exceptional writing and communications ability, and be tech-savvy. Candidate should be flexible and willing to work in a fast-paced, start-up environment.
+
+The ideal candidate has the following qualifications:
+
+- Has a bachelors degree (Computer Science background/experience not required)
+- Ability to travel 20% time 
 
 Email resume, cover letter, and/or LinkedIn profile to <a href="mailto:jobs@code.org">jobs@code.org</a>.
 

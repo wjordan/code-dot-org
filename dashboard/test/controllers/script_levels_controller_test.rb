@@ -8,6 +8,7 @@ class ScriptLevelsControllerTest < ActionController::TestCase
 
   setup do
     @student = create :student
+    @young_student = create :young_student
     @teacher = create :teacher
     @section = create :section, user_id: @teacher.id
     Follower.create!(section_id: @section.id, student_user_id: @student.id, user_id: @teacher.id)
@@ -38,9 +39,10 @@ class ScriptLevelsControllerTest < ActionController::TestCase
   test 'should not log an activity monitor start for netsim' do
     @controller.expects(:slog).never # don't log activity monitor start
 
-    netsim_script = Script.find_by_name('netsim')
-    netsim_script_level = netsim_script.script_levels.first
-    get :show, script_id: netsim_script, stage_id: netsim_script_level.stage.position, id: netsim_script_level.position
+    allthethings_script = Script.find_by_name('allthethings')
+    netsim_level = allthethings_script.levels.select { |level| level.game == Game.netsim }.first
+    netsim_script_level = allthethings_script.script_levels.select { |script_level| script_level.level_id == netsim_level.id }.first
+    get :show, script_id: allthethings_script, stage_id: netsim_script_level.stage.position, id: netsim_script_level.position
     assert_response :success
 
     assert_equal netsim_script_level, assigns(:script_level)
@@ -665,6 +667,26 @@ class ScriptLevelsControllerTest < ActionController::TestCase
     get :show, script_id: sl.script, stage_id: sl.stage, id: sl, solution: true
 
     assert_response :forbidden
+  end
+
+  test 'under 13 gets redirected when trying to access applab' do
+    sl = ScriptLevel.find_by_script_id_and_level_id(Script.find_by_name('allthethings'), Level.find_by_key('U3L2 Using Simple Commands'))
+
+    sign_in @young_student
+
+    get :show, script_id: sl.script, stage_id: sl.stage, id: sl
+
+    assert_redirected_to '/'
+  end
+
+  test 'over 13 does not get redirected when trying to access applab' do
+    sl = ScriptLevel.find_by_script_id_and_level_id(Script.find_by_name('allthethings'), Level.find_by_key('U3L2 Using Simple Commands'))
+
+    sign_in @student
+
+    get :show, script_id: sl.script, stage_id: sl.stage, id: sl
+
+    assert_response :success
   end
 
 end

@@ -20,8 +20,8 @@ var _ = utils.getLodash();
 var i18n = require('./locale');
 var NetSimPanel = require('./NetSimPanel');
 var markup = require('./NetSimRemoteNodeSelectionPanel.html.ejs');
-var NodeType = require('./netsimConstants').NodeType;
-var netsimGlobals = require('./netsimGlobals');
+var NodeType = require('./NetSimConstants').NodeType;
+var NetSimGlobals = require('./NetSimGlobals');
 
 /**
  * Generator and controller for lobby node listing, selection, and connection
@@ -94,7 +94,7 @@ var NetSimRemoteNodeSelectionPanel = module.exports = function (rootDiv,
   NetSimPanel.call(this, rootDiv, {
     className: 'netsim-lobby-panel',
     panelTitle: this.getLocalizedPanelTitle(),
-    canMinimize: false
+    userToggleable: false
   });
 };
 NetSimRemoteNodeSelectionPanel.inherits(NetSimPanel);
@@ -118,6 +118,8 @@ NetSimRemoteNodeSelectionPanel.prototype.render = function () {
   }));
   this.getBody().html(newMarkup);
 
+  this.updateLayout();
+
   // Move the reference area to beneath the instructions
   this.getBody().find('.instructions').append(referenceArea);
 
@@ -129,12 +131,35 @@ NetSimRemoteNodeSelectionPanel.prototype.render = function () {
   this.getBody().find('.cancel-button').click(this.cancelButtonCallback_);
 };
 
+
+/**
+ * Updates the layout of the markup, usually in response to a window
+ * resize. Currently just adjusts the height of the lobby table to keep
+ * everything onscreen.
+ */
+NetSimRemoteNodeSelectionPanel.prototype.updateLayout = function () {
+
+  var lobbyTable = this.getBody().find('#netsim-scrolling-lobby');
+  var container = this.getBody().closest('#netsim-disconnected');
+
+  if (lobbyTable.is(':visible')) {
+    lobbyTable.height("none");
+    var overflow = container.prop('scrollHeight') - container.prop('clientHeight');
+
+    if (overflow > 0) {
+      var newHeight = lobbyTable.height() - overflow;
+      var minHeight = lobbyTable.find('tr').first().outerHeight(true);
+      lobbyTable.height(Math.max(newHeight, minHeight));
+    }
+  }
+};
+
 /**
  * @returns {string} a localized panel title appropriate to the current level
  *          configuration
  */
 NetSimRemoteNodeSelectionPanel.prototype.getLocalizedPanelTitle = function () {
-  var levelConfig = netsimGlobals.getLevelConfig();
+  var levelConfig = NetSimGlobals.getLevelConfig();
 
   if (levelConfig.canConnectToClients &&
       levelConfig.canConnectToRouters) {
@@ -155,7 +180,7 @@ NetSimRemoteNodeSelectionPanel.prototype.getLocalizedPanelTitle = function () {
  *          level configuration
  */
 NetSimRemoteNodeSelectionPanel.prototype.getLocalizedLobbyInstructions = function () {
-  var levelConfig = netsimGlobals.getLevelConfig();
+  var levelConfig = NetSimGlobals.getLevelConfig();
 
   if (levelConfig.canConnectToClients &&
       levelConfig.canConnectToRouters) {
@@ -213,12 +238,12 @@ NetSimRemoteNodeSelectionPanel.prototype.canConnectToNode = function (connection
   var isRouter = (connectionTarget.getNodeType() === NodeType.ROUTER);
 
   // Can't connect to full routers
-  if (isRouter && connectionTarget.isFull()) {
+  if (connectionTarget.isFull()) {
     return false;
   }
 
   // Permissible connection limited by level configuration
-  var levelConfig = netsimGlobals.getLevelConfig();
+  var levelConfig = NetSimGlobals.getLevelConfig();
   var allowClients = levelConfig.canConnectToClients;
   var allowRouters = levelConfig.canConnectToRouters;
   return (isClient && allowClients) || (isRouter && allowRouters);
@@ -237,7 +262,7 @@ NetSimRemoteNodeSelectionPanel.prototype.hasOutgoingRequest = function () {
  * @returns {boolean} TRUE if the given node should show up in the lobby
  */
 NetSimRemoteNodeSelectionPanel.prototype.shouldShowNode = function (node) {
-  var levelConfig = netsimGlobals.getLevelConfig();
+  var levelConfig = NetSimGlobals.getLevelConfig();
   var isClient = (node.getNodeType() === NodeType.CLIENT);
   var isRouter = (node.getNodeType() === NodeType.ROUTER);
   var showClients = levelConfig.showClientsInLobby;

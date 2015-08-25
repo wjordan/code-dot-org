@@ -26,6 +26,11 @@ FactoryGirl.define do
     factory :student do
       user_type User::TYPE_STUDENT
     end
+
+    factory :young_student do
+      user_type User::TYPE_STUDENT
+      birthday Date.today - 10.years
+    end
   end
 
   factory :section do
@@ -66,7 +71,7 @@ FactoryGirl.define do
 
   factory :match, :parent => Level, :class => Match do
     game {create(:game, app: "match")}
-    properties{{title: 'title', answers: [{text: 'test', correct: true}], questions: [{text:'test'}], options: {hide_submit: false}}}
+    properties{{title: 'title', answers: [{text: 'test', correct: true}], questions: [{text: 'test'}], options: {hide_submit: false}}}
   end
 
   factory :artist, :parent => Level, :class => Artist do

@@ -29,7 +29,7 @@
       placeholder: Код групи (ABCDEF)
     submit: Додати викладача
   add_hint_form:
-    placeholder: Будь ласка, введіть підказку сюди
+    placeholder: Будь ласка, введіть сюди підказку
     submit: Додати підказку
   appname: Code.org
   stage: етап
@@ -185,7 +185,7 @@
       'no': Ні
       'yes': Так
       msg: Ви впевнені, що ви хочете отримати приз %{prize_name}?
-      msg_student: 'Примітка: Ви можете вибрати тільки один тип нагороди.'
+      msg_student: 'Примітка: Можна вибрати тільки один тип нагороди.'
       msg_publicschool: Будь ласка, підтвердьте, що ви є вчителем державної школи
         США.
       msg_visit_website: Відвідати сайт
@@ -258,11 +258,12 @@
       free_play:
         playlab: Створити програму
         artist: Намалювати
+        calculate: Calculate Something
     user:
       classroom: Домашня сторінка вчителя
-      district_dashboard: Дошка області
+      district_dashboard: Панель області
       label: Привіт %{username}
-      stats: Мій прогрес
+      stats: Студія коду
       settings: Мій профіль
       prizes: Призи
       logout: Вийти
@@ -276,7 +277,7 @@
       close: ЗАКРИТИ
       mastery: Поняття
       puzzle_map: Етапи
-      prizes: Зберіть усі %{total_trophies} трофеїв та вигравайте призи!
+      prizes: Збери усі %{total_trophies} трофеїв та вигравай призи!
       prize_earned: Усі %{total_trophies} трофеїв зібрано. Приз здобуто!
       prize_us_only: (лише для учнів зі США)
       prizes_link: Детальніше
@@ -317,7 +318,7 @@
         забуде пароль, ви зможете його скинути.
       register: Запросіть своїх учнів до самостійної реєстрації
       vist: Запросіть своїх учнів
-      section_code: 'і введіть код їхньої групи:'
+      section_code: 'і ввести код їхньої групи:'
       first_please: Спочатку просимо %{add_section}
       for: Для
       enter: 'введіть:'
@@ -372,10 +373,10 @@
     classroom_activity: Безмашинна вправа
   home:
     title: Студія коду
-    description: Code Studio є домвікою для онлайн курсів, створених в Code.org
-    lines_of_code: '%{lines_count} РЯДКІВ КОДУ, НАПИСАНА УЧНЯМИ'
-    lines_of_code_linebreak: '%{lines_count} РЯДКІВ КОДУ <br/> НАПИСАНІ %{students_count}
-      МІЛЬЙОНАМИ СТУДЕНТІВ'
+    description: Студія коду є домівкою для онлайн курсів, створених Code.org
+    lines_of_code: '%{lines_count} РЯДКІВ КОДУ, НАПИСАНИХ УЧНЯМИ'
+    lines_of_code_linebreak: '%{lines_count} РЯДКІВ КОДУ <br/> НАПИСАНИХ %{students_count}
+      МІЛЬЙОНАМИ УЧНІВ'
     all_courses: Огляд курсів, 1, 2 і 3
     lesson_plans: Плани уроків
     signin_message: Вже зареєстровані? %{link}
@@ -397,11 +398,12 @@
     student_stats: Ви здобули %{trophy_count} із %{trophy_max} трофеїв "Опанування
       понять".
     student_left_off: 'Де ви зупинилися:'
-    student_finished: Ви завершили всі уроки, виберіть інший клас %{online_link} або
-      %{local_school_link}
+    student_finished: Ви завершили всі уроки Code.org, виберіть інший клас %{online_link}
+      або %{local_school_link}.
     local_school: місцева школа
     online: онлайн
     see_details: Див. докладніше
+    view_course: Перегляд курсу
     prize_info: 'Призи за участь (тільки для вчителів державних шкіл США): до $1000
       нагород на клас.'
     tryfirst: 'Або, ви можете спочатку спробувати і зареєструватися пізніше:'
@@ -414,12 +416,18 @@
     try_beta_courses: Новинка! Спробуйте наші бета-курси для учнів 1-5 класів
     use_as_teacher: Використовуйте цей сайт як вчитель
     heading_hoc2014: <h2>Година коду</h2><h1>для будь-якого віку</h1>
-    heading_elementary: <h2>20-годинні курси</h2><h1>для початківців</h1>
+    heading_elementary: <h2>20-годинні курси</h2><h1>вступу до інформатики (для будь-якого
+      віку)</h1>
     heading_apps: <h2>Цікавинки</h2><h1>для усіх</h1>
-    heading_legacy: <h2>Загальний курс</h2><h1>для будь-якого віку</h1>
+    heading_legacy: <h2>Прискорений курс</h2><h1>для будь-якого віку</h1>
     your_gallery: Галерея
     no_primary_course: Спробуйте курс Code Studio
+    choose_next_course: Спробуйте курс Студії коду, обравши один з варіантів
     print_certificate: Друкувати сертифікат
+  share:
+    title: Learn on Code Studio
+    description: Anyone can learn computer science. Make games, apps and art with
+      code.
   gender:
     male: Чоловік
     female: Жінка
@@ -428,12 +436,20 @@
     student: учень
     teacher: Вчитель
   footer:
+    thank_you: We thank our <a href="https://code.org/about/donors">donors</a>, <a
+      href="https://code.org/about/partners">partners</a>, our <a href="https://code.org/about/team">extended
+      team</a>, our video cast, and our <a href="https://code.org/about/advisors">education
+      advisors</a> for their support in creating Code Studio.
     help_from_html: Інженери Google, Microsoft, Facebook і Twitter допомогли створити
       цей підручник.
     art_from_html: Angry Birds&trade; & &copy; 2009 - 2014 Rovio Entertainment Ltd.
       Всі права захищені.<br/> Plants vs. Zombies&trade; & &copy; 2014 Electronic
       Arts Inc. Всі права захищені.
     powered_by_aws: На потужностях Amazon Web Services
+    trademark: '&copy; Code.org, %{current_year}. Code.org&reg;, the CODE logo and
+      Hour of Code&reg; are trademarks of Code.org.'
+    copyright: Авторське право
+    more: Більше
     feedback: Надати відгук
     translate: Допоможіть нам перекласти вашою мовою
     support: Підтримка
@@ -455,12 +471,6 @@
     autoplay_option: Автовідтворення відео
     download: Завантажити відео
   compatability:
-    https:
-      header: Будь ласка, увімкніть HTTPS для Code.org.
-      message: Для підвищення безпеки, ми перейшли до HTTPS на %{https_date}. Ви не
-        зможете отримати доступ до Code.org після цієї дати. <a href='%{it_requirements_url}'>
-        натисніть тут</a>, щоб дізнатися, як увімкнути HTTPS для Code.org.
-      hide_this_warning: Сховати попередження
     working:
       header: Ми працюємо над підтримкою для вашого браузера.
       message: Code.org використовує сучасні веб-технології, тому сайт працює швидко.
@@ -470,7 +480,7 @@
         браузер до потрібної версії</a>.
       hide_this_warning: Сховати попередження
     upgrade:
-      header: Будь ласка обновіть браузер.
+      header: Будь ласка, оновіть браузер.
       message: Code.org використовує сучасні веб-технології, тому сайт працює швидко.
         На жаль, Ваш браузер не підтримує усі функції, передбачені цією частиною сайту.<br/><br/>Встановіть
         один із перевірених браузерів для продовження роботи. Можете також <a href='#'>спробувати
@@ -486,7 +496,7 @@
   download_coming_soon: Заготовки до діяльності скоро будуть.
   video_coming_soon: Незабаром буде відео!
   share_code:
-    title: Натисніть кнопку "Виконати", щоб побачити мою програму в дії
+    title: Натисни кнопку "Запустити", щоб побачити мою програму в дії
     bounce_og_title: Подивіться на мою гру Арканоід
     flappy_og_title: Поглянь на мою гру в Пурха (Flappy Game)
     studio_og_title: Погляньте на мою програму Ігрової студії
@@ -520,8 +530,7 @@
       body: Цей 20-годинний курс охоплює базові поняття комп'ютерних наук та програмування.
         Цей курс розроблено для використання на заняттях в основній школі, але може
         бути цікавим для будь-якого віку.
-      body_short: Дізнатися основні номер інформатику в прискореному версії програми
-        навчання 2-4.
+      body_short: Вивчити основи інформатики у прискореній версії курсів 2-4.
     hoc2014:
       try_new_tutorial: Спробуйте новий підручник Години коду в бета-версії
       try_frozen: Художник з Анною та Ельзою, із Крижаного серця
@@ -585,9 +594,14 @@
   text_match:
     placeholder: Введіть свою відповідь тут
     open_response_title: Дякуємо
-    open_response_body: Дякуємо за твою відповідь!
+    open_response_body: Дякуємо за вашу відповідь!
   dialog:
     ok: Гаразд
+    startover_title: Ви впевнені, що хочете почати все спочатку?
+    startover_body: This will reset the puzzle to its start state and reset all the
+      data you've added or changed.
+    startover_ok: Почати знову
+    startover_cancel: Скасувати
   time:
     hour: 1 година
     day: день
@@ -667,9 +681,9 @@
     name: Ім’я
     updated: Оновлено
     project_type: Тип проекту
-    help_text: Натисніть на кнопки <strong>Створити додаток</strong> або <strong>Намалювати
-      щось</strong>, щоб створити нову Ігрову лабораторію або проект Художника!<br/>Ви
-      зможете повернутись до роботи над проектом в будь-який час.
+    help_text: Клацни кнопки <strong>Створити програму</strong> або <strong>Намалювати</strong>,
+      щоб увійти в Ігрову лабораторію або створити проект Художника!<br/>Повернутись
+      до роботи над проектом можна у будь-який час.
     need_help: Потрібна допомога, щоб розпочати?
     really_delete: Видалити?
     delete_yes: Так
@@ -683,4 +697,4 @@
       працюватиме.
     view_all: Переглянути Мої проекти
     remix: Ремікс
-    click_to_remix: Клацніть 'Ремікс', щоб створити власну версію на основі цієї!
+    click_to_remix: Клацни 'Ремікс', щоб створити власну версію на основі цієї!

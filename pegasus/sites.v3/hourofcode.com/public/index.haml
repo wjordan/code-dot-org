@@ -26,6 +26,9 @@ social:
 -twitter = {:url=>"http://hourofcode.com", :related=>'codeorg', :hashtags=>'', :text=>hoc_s(:twitter_default_text)}
 -twitter[:hashtags] = 'HourOfCode' unless hoc_s(:front_header_banner).include? '#HourOfCode'
 
+-if request.site == 'translate.hourofcode.com'
+  %script{type: "text/javascript", src: "/js/crowdin-incontext.js"}
+  %script{type: "text/javascript", src: "//cdn.crowdin.com/jipt/jipt.js"}
 %script{type: "text/javascript", src: "/js/sifter.min.js"}
 %script{type: "text/javascript", src: "/js/microplugin.min.js"}
 %script{type: "text/javascript", src: "https://maps.googleapis.com/maps/api/js?client=#{CDO.google_maps_client_id}&sensor=false&libraries=places,geometry&v=3.7"}
@@ -171,7 +174,7 @@ social:
   .row#infotop{style: "font-weight: 500; font-size: 16px; color: rgb(26, 172, 186)"}
     .col-xs-6.col-sm-4{style: "text-align:center;"}
       %p=hoc_s(:stats_i18n)
-      %img{src: "/images/stats-languages.png", style: "width: 100%"}
+      %img{src: "/images/stats-languages.jpg", style: "width: 100%"}
 
     .col-xs-6.col-sm-4{style: "text-align:center"}
       %p=hoc_s(:stats_global)

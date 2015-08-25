@@ -216,6 +216,7 @@ hr:
       free_play:
         playlab: Napravi aplikaciju
         artist: Nacrtaj nešto
+        calculate: Calculate Something
     user:
       classroom: Učiteljeva Početna stranica
       district_dashboard: District Dashboard
@@ -345,6 +346,7 @@ hr:
     local_school: lokalna škola
     online: online
     see_details: Vidi detalje
+    view_course: View Course
     prize_info: 'Nagrade za sudjelovanje (samo za američke učitelje): do 1.000 dolara u učioničkim nagradama.'
     tryfirst: 'Ili, možete to prvo isprobati, a kasnije se prijaviti:'
     trynow: Probaj sad
@@ -358,8 +360,12 @@ hr:
     heading_apps: '<h2>Zabava za</h2><h1>sve</h1>'
     heading_legacy: '<h2>Naš općeniti tečaj za</h2><h1>sve uzraste</h1>'
     your_gallery: Galerija
-    no_primary_course: Try a course at Code Studio
+    no_primary_course: Try a Code Studio course
+    choose_next_course: Try a Code Studio course by choosing one below
     print_certificate: Print Certificate
+  share:
+    title: Learn on Code Studio
+    description: Anyone can learn computer science. Make games, apps and art with code.
   gender:
     male: Muško
     female: Žensko
@@ -368,9 +374,13 @@ hr:
     student: Učenik
     teacher: Učitelj
   footer:
+    thank_you: 'We thank our <a href="https://code.org/about/donors">donors</a>, <a href="https://code.org/about/partners">partners</a>, our <a href="https://code.org/about/team">extended team</a>, our video cast, and our <a href="https://code.org/about/advisors">education advisors</a> for their support in creating Code Studio.'
     help_from_html: Inženjeri iz Googlea, Microsofta, Facebooka i Twittera su pomogli napraviti ovaj tutorijal.
     art_from_html: 'Angry Birds&trade; & &copy; 2009 - 2014 Rovio Entertainment Ltd. Sva prava pridržana.<br/> Plants vs. Zombies&trade; & &copy; 2014 Electronic Arts Inc. Sva prava pridržana.'
     powered_by_aws: Potpomognuto s Amazon Web Services
+    trademark: '&copy; Code.org, %{current_year}. Code.org&reg;, the CODE logo and Hour of Code&reg; are trademarks of Code.org.'
+    copyright: Copyright
+    more: Više
     feedback: Pošaljite povratne informacije
     translate: Pomozite nam prevesti na vaš jezik
     support: Podrška
@@ -392,10 +402,6 @@ hr:
     autoplay_option: Automatska reprodukcija videozapisa
     download: Preuzimanje videa
   compatability:
-    https:
-      header: Please enable HTTPS for Code.org.
-      message: "To increase security, we are switching to HTTPS on %{https_date}. You will not be able to access Code.org after this date. <a href='%{it_requirements_url}'>Click here</a> to learn how to enable HTTPS for Code.org."
-      hide_this_warning: Sakrij ovo upozorenje
     working:
       header: Radimo na podršci za vaš preglednik.
       message: "Code.org koristi moderne web tehnologije. To čini ovo sjedište bržim. Vaš preglednik ne podržava sve potrebne značajke i mogu se pojaviti problemi dok koristite ovaj dio sjedišta. Molimo vas da nam pomognete tako da nas <a href='%{report_issue_url}'>izvijestite o problemima na koje ste naišli</a>. Također možete <a href='%{supported_browsers_url}'>nadograditi svoj preglednik na podržanu verziju</a>."
@@ -502,6 +508,10 @@ hr:
     open_response_body: Thanks for your response!
   dialog:
     ok: U redu
+    startover_title: Jeste li sigurni da želite početi iznova?
+    startover_body: "This will reset the puzzle to its start state and reset all the data you've added or changed."
+    startover_ok: Počni ispočetka
+    startover_cancel: Odustani
   time:
     hour: 1 sat
     day: dan

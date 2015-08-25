@@ -36,6 +36,9 @@
   = f.label :disable_examples, 'Hide examples section in contract editor'
   = boolean_check_box f, :disable_examples
 .field
+  = f.label :examples_required, 'Each function must have at least 1 example, and examples will be checked when hitting run'
+  = boolean_check_box f, :examples_required
+.field
   = f.label :open_function_definition, 'Auto-open function definition'
   = f.text_field :open_function_definition, placeholder: 'name of function to open'
 %table.contract-editor-config
@@ -55,15 +58,6 @@
 .field
   = f.label :disable_variable_editing, 'Disable editing of variable names and creation of new variables'
   = boolean_check_box f, :disable_variable_editing
-.field
-  = f.label :scrollbars, 'Scrollbars'
-  %div
-    Default:
-    = f.radio_button :scrollbars, 'nil', checked: @level.scrollbars.nil?
-    True:
-    = f.radio_button :scrollbars, true
-    False:
-    = f.radio_button :scrollbars, false
 - if @level.game.uses_droplet?
   .field
     = f.label :code_functions, 'Edit Droplet Palette'

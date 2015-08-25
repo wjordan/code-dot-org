@@ -224,6 +224,7 @@ sv:
       free_play:
         playlab: Skapa en App
         artist: Rita något
+        calculate: Calculate Something
     user:
       classroom: Lärare hemsida
       district_dashboard: Distrikt Dashboard
@@ -355,6 +356,7 @@ sv:
     local_school: närliggande skola
     online: Online
     see_details: Se detaljer
+    view_course: View Course
     prize_info: 'Priser för deltagande (endast USA): upp till $1.000 i klassrums- belöningar.'
     tryfirst: 'Eller, du kan prova  först och registrera dig senare:'
     trynow: Prova nu
@@ -369,7 +371,11 @@ sv:
     heading_legacy: '<h2>Vår allmänna kurs för</h2><h1>Alla åldrar</h1>'
     your_gallery: Galleri
     no_primary_course: Prova en kurs på Code Studio
+    choose_next_course: Try a Code Studio course by choosing one below
     print_certificate: Skriv ut intyg
+  share:
+    title: Learn on Code Studio
+    description: Anyone can learn computer science. Make games, apps and art with code.
   gender:
     male: Man
     female: Kvinna
@@ -378,9 +384,13 @@ sv:
     student: Student
     teacher: Lärare
   footer:
+    thank_you: 'We thank our <a href="https://code.org/about/donors">donors</a>, <a href="https://code.org/about/partners">partners</a>, our <a href="https://code.org/about/team">extended team</a>, our video cast, and our <a href="https://code.org/about/advisors">education advisors</a> for their support in creating Code Studio.'
     help_from_html: Ingenjörer från Google, Microsoft, Facebook, och Twitter hjälpte till med att skapa denna övning.
     art_from_html: 'Angry Birds ™ & © 2009-2014 Rovio Entertainment Ltd. Alla rättigheter reserverade. <br/> Plants vs Zombies ™ & © 2014 Electronic Arts Inc. Alla rättigheter reserverade.'
     powered_by_aws: Drivs av Amazon Web Services
+    trademark: '&copy; Code.org, %{current_year}. Code.org&reg;, the CODE logo and Hour of Code&reg; are trademarks of Code.org.'
+    copyright: Copyright
+    more: Mer
     feedback: Ge feedback
     translate: Hjälp oss översätta till ditt språk
     support: Hjälp
@@ -402,10 +412,6 @@ sv:
     autoplay_option: spela upp automatiskt
     download: Ladda ner video
   compatability:
-    https:
-      header: Aktivera HTTPS för Code.org.
-      message: "To increase security, we are switching to HTTPS on %{https_date}. You will not be able to access Code.org after this date. <a href='%{it_requirements_url}'>Click here</a> to learn how to enable HTTPS for Code.org."
-      hide_this_warning: Dölj denna varning
     working:
       header: Vi arbetar för stöd till din webbläsare.
       message: "Code.org använder modern webbteknik vilket gör webbplatsen snabbare att använda. Din webbläsare stöder inte alla funktioner som krävs, och du kan uppleva problem när du använder denna del av webbplatsen. Hjälp oss genom att <a href='%{report_issue_url}'> rapportera eventuella problem du hittar</a>. Du kan även <a href='%{supported_browsers_url}'> uppgradera din webbläsare till en version som stöds</a>."
@@ -512,6 +518,10 @@ sv:
     open_response_body: Tack för ditt svar!
   dialog:
     ok: Ok
+    startover_title: Är du säker på att du vill börja om?
+    startover_body: "This will reset the puzzle to its start state and reset all the data you've added or changed."
+    startover_ok: Börja om
+    startover_cancel: Avbryt
   time:
     hour: 1 timme
     day: dag

@@ -39,6 +39,14 @@ template '/etc/default/varnish' do
   notifies :restart, "service[varnish]"
 end
 
+template '/etc/varnish/accept-language.vcl' do
+  source 'accept-language.vcl.erb'
+  user 'root'
+  group 'root'
+  mode '0644'
+  notifies :restart, "service[varnish]"
+end
+
 template '/etc/varnish/default.vcl' do
   source 'default.vcl.erb'
   user 'root'

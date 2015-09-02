@@ -180,7 +180,7 @@ sub vcl_recv
   }
 
   C{
-      vcl_rewrite_accept_language(sp);
+      vcl_rewrite_accept_language(ctx);
   }C
 
   /*

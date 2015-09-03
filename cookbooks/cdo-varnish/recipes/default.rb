@@ -3,6 +3,8 @@
 # Recipe:: default
 #
 
+# TODO: remove 'varnish' and 'varnish-3.0-vmods' repositories after all servers are updated.
+
 # From https://www.varnish-cache.org/installation/ubuntu
 apt_package 'apt-transport-https'
 apt_repository 'varnish' do
@@ -11,29 +13,38 @@ apt_repository 'varnish' do
   distribution 'trusty'
   components ['varnish-4.0']
   key 'https://repo.varnish-cache.org/GPG-key.txt'
+  action :remove
 end
+
+# Old Varnish 3.0 vmods from PPA.
+apt_repository 'varnish-3.0-vmods' do
+  uri          'ppa:cmcdermottroe/varnish-3.0-vmods'
+  distribution 'trusty'
+  action :remove
+end
+
+# Varnish 4.0 vmods from PPA.
+apt_repository 'varnish-4.0-vmods' do
+  uri          'ppa:wjordan/varnish-vmods'
+  distribution 'trusty'
+end
+
 apt_package 'varnish' do
   version '4.0.3-1~trusty'
   options '--force-yes'
   # Keep overwritten package-maintained config files on upgrade
   options '-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
 end
-
-# Old Varnish 3.0 vmods from PPA.
-# TODO: remove these entries after all servers are updated.
-apt_repository 'varnish-3.0-vmods' do
-  uri          'ppa:cmcdermottroe/varnish-3.0-vmods'
-  distribution 'trusty'
-  action :remove
-end
 apt_package 'libvmod-cookie' do
-  action :remove
+  version '1.0.3+4.0.3-3~trusty'
+  options '--force-yes'
 end
 apt_package 'libvmod-header' do
-  action :remove
+  version '0.3+4.0.3-1~trusty'
+  options '--force-yes'
 end
 
-service "varnish" do
+service 'varnish' do
   action :nothing
 end
 

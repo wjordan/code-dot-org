@@ -6,7 +6,7 @@ default['cdo-varnish'] = {
   'storage' => 'malloc,0.5G',
 }
 
-default['cdo-apps'] = default['cdo-apps'] || {
+default['cdo-apps'] = {
   'dashboard' => {
     'port' => 8080,
   },
@@ -21,4 +21,4 @@ default['cdo-apps'] = default['cdo-apps'] || {
     },
   },
 
-}
+} if default['cdo-apps'].empty?

@@ -1,6 +1,8 @@
 ---
 driver:
   name: docker
+  use_sudo: false
+  privileged: true
 
 provisioner:
   name: chef_solo

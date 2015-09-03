@@ -36,7 +36,7 @@ apt_package 'varnish' do
   options '-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
 end
 apt_package 'libvmod-cookie' do
-  version '1.0.3+4.0.3-3~trusty'
+  version '1.03+4.0.3-4~trusty'
   options '--force-yes'
 end
 apt_package 'libvmod-header' do

@@ -236,9 +236,7 @@ end
   # Varnish cache temporarily. The session cookie allows all authenticated users
   # to pass through as long as they're logged in.
   if (req.http.Cookie) {
-    if (req.url ~ "^/volunteers") {
-      cookie.filter_except("_fe_session,hour_of_code,NO_CACHE");
-    } else if (req.url ~ "^/auth") {
+    if (req.url ~ "^/auth") {
       cookie.filter_except("cdo-private,hour_of_code,NO_CACHE");
     } else if (
         req.http.host == "<%= canonical_hostname('learn.code.org') %>" ||
@@ -309,13 +307,6 @@ sub vcl_backend_response {
 }
 
 sub vcl_deliver {
-  # Add 1-year HTTP Strict Transport Security header, to HTTPS responses only.
-  # "An HSTS Host MUST NOT include the STS header field in HTTP responses conveyed over non-secure transport."
-  # @see http://tools.ietf.org/html/rfc6797#section-7.2
-  if (req.http.X-Forwarded-Proto ~ "(?i)https") {
-    set resp.http.Strict-Transport-Security = "max-age=31536000";
-  }
-
   # Set a header to track a cache HIT/MISS.
   if (obj.hits > 0) {
     set resp.http.X-Varnish-Cache = "HIT";
@@ -342,6 +333,4 @@ sub vcl_synth {
     set resp.status = 301;
     return(deliver);
   }
-
-  # Pass-through to builtin.
 }

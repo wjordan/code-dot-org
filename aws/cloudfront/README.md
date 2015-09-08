@@ -21,6 +21,6 @@ CDO environment variables used:
     To whitelist all headers, pass `['*']`.
     To strip all headers, pass `[]`.
   - `cookies`: A whitelist array of HTTP cookie keys to to pass to the origin and include in the cache key.
-    To whitelist all cookies, pass `'all''`.
+    To whitelist all cookies, pass `'all'`.
     To strip all cookies, pass `'none'`.
 - `default`: Default behavior if no other path patterns are matched. Uses the same syntax as `behaviors` except `path` is not required.

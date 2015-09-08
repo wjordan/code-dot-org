@@ -163,13 +163,9 @@ sub vcl_recv
   %>else if(req.http.Host == "<%= domain %>")
   {
     /* <%= domain %> redirects to <%= site %> */
-    return(synth(751, "http://<%= site %>" + req.url));
+    return(synth(751, "https://<%= site %>" + req.url));
   }
   <% end%>
-  if(req.http.Cookie) {
-    cookie.parse(req.http.Cookie);
-  }
-
   # Redirect http to https
   if(req.http.X-Forwarded-Proto !~ "(?i)https") {
     return(synth(751, "https://" + req.http.host + req.url));
@@ -178,6 +174,10 @@ sub vcl_recv
   C{
       vcl_rewrite_accept_language(ctx);
   }C
+
+  if(req.http.Cookie) {
+    cookie.parse(req.http.Cookie);
+  }
 
   /*
   ** Convert language cookie into X-Varnish-Accept-Language header
@@ -223,27 +223,6 @@ end
   else
   {
     set req.backend_hint = default.backend();
-  }
-
-  # Handle compression correctly. Different browsers send different
-  # "Accept-Encoding" headers, even though they mostly all support the same
-  # compression mechanisms. By consolidating these compression headers into
-  # a consistent format, we can reduce the size of the cache and get more hits.=
-  # @see: https://www.varnish-cache.org/trac/wiki/FAQ/Compression
-  if (req.http.Accept-Encoding) {
-    if (req.http.Accept-Encoding ~ "gzip") {
-      # If the browser supports it, we'll use gzip.
-      set req.http.Accept-Encoding = "gzip";
-    }
-    else if (req.http.Accept-Encoding ~ "deflate" && req.http.user-agent !~ "MSIE") {
-      # Next, try deflate if it is supported.
-      # (IE doesn't support deflate properly, so we don't want to send deflated content to IE.)
-      set req.http.Accept-Encoding = "deflate";
-    }
-    else {
-      # Unknown algorithm. Remove it and send unencoded.
-      unset req.http.Accept-Encoding;
-    }
   }
 
   # Always cache the following file types for all users.
@@ -296,35 +275,7 @@ end
     }
   }
 
-  ## From default below ##
-  if (req.restarts == 0) {
-    if (req.http.x-forwarded-for) {
-      set req.http.X-Forwarded-For =
-      req.http.X-Forwarded-For + ", " + client.ip;
-    } else {
-      set req.http.X-Forwarded-For = client.ip;
-    }
-  }
-
-  if (req.method != "GET" &&
-    req.method != "HEAD" &&
-    req.method != "PUT" &&
-    req.method != "POST" &&
-    req.method != "TRACE" &&
-    req.method != "OPTIONS" &&
-    req.method != "DELETE") {
-      /* Non-RFC2616 or CONNECT which is weird. */
-      return (pipe);
-  }
-  if (req.method != "GET" && req.method != "HEAD") {
-      /* We only deal with GET and HEAD by default */
-      return (pass);
-  }
-  if (req.http.Authorization) {
-      /* Not cacheable by default */
-      return (pass);
-  }
-  return (hash);
+  # Pass-through to builtin.
 }
 
 # Handle the HTTP request coming from our backend
@@ -340,7 +291,6 @@ sub vcl_backend_response {
     # allow this route to always set cookies.
   } else if (bereq.url ~ "(?i)\.(png|gif|jpeg|jpg|ico|swf|css|js)(\?[a-z0-9]+)?$") {
     # Don't allow static files to set cookies.
-    # beresp == Back-end response from the web server.
     unset beresp.http.set-cookie;
   }
   else if (beresp.http.Cache-Control) {

@@ -13,5 +13,5 @@ platforms:
 suites:
   - name: default
     run_list:
-      - recipe[cdo-varnish::default]
+      - recipe[varnish_test]
     attributes:

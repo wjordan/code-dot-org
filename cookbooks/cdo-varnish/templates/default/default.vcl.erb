@@ -195,6 +195,7 @@ end
       req.http.host == "<%= canonical_hostname('studio.code.org') %>" ||
       req.http.host == "code-dot-org.cartoonnetworkarabic.com")
   {
+    # Proxy studio.code.org/v2/ to code.org/v2/
     if (req.url ~ "^/v2/")
     {
       set req.backend_hint = default.backend();
@@ -207,7 +208,7 @@ end
   }
   else if (req.url ~ "^/dashboardapi/")
   {
-    # Map /dashboardapi to studio.code.org/api
+    # Proxy code.org/dashboardapi/ to studio.code.org/api/
     set req.backend_hint = dashboard.backend();
     set req.http.host = "<%= canonical_hostname('studio.code.org') %>";
     set req.url = regsub(req.url, "^/dashboardapi/", "/api/");
@@ -215,6 +216,7 @@ end
   }
   else if (req.url ~ "^/api/change.org/")
   {
+    # Proxy code.org/api/change.org/ to api.change.org/
     set req.backend_hint = api_change_org.backend();
     set req.http.host = "api.change.org";
     set req.url = regsub(req.url, "^/api/change.org/", "/");

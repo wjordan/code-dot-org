@@ -1,3 +1,5 @@
 source 'https://supermarket.chef.io'
 
 metadata
+cookbook "cdo-nodejs", :path => "../cdo-nodejs"
+cookbook "varnish_test", :path => "./test/cookbooks/varnish_test"

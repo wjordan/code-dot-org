@@ -18,6 +18,7 @@ default['cdo-apps'] = {
   'i18n' => {
     'languages' => {
       'en' => 'English',
+      'fr' => 'French',
     },
   },
 

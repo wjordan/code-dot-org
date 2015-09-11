@@ -69,18 +69,20 @@ def mock_url(url, body, request_headers={}, response_headers={})
   `curl -s -X POST localhost:8080/__admin/mappings/new -d '#{json}'`
 end
 
-def request(url, headers={}, cookies={})
+def _request(url, headers={}, cookies={})
   header_string = headers.map { |key, value| "-H \"#{key}: #{value}\"" }.join(' ')
   cookie_string = cookies.empty? ? '' : "--cookie \"#{cookies.map{|k,v|"#{k}=#{v}"}.join(';')}\""
-  `curl -s #{cookie_string} #{header_string} -i localhost:8080#{url}`.tap{assert_equal 0, $?.exitstatus}
+  `curl -s #{cookie_string} #{header_string} -i #{url}`.tap{assert_equal 0, $?.exitstatus}
 end
 
-def proxy_request(url, https=true, headers={}, cookies={})
+def request(url, headers={}, cookies={})
+  _request("localhost:8080#{url}", headers, cookies)
+end
+
+def proxy_request(url, headers={}, cookies={})
   headers.merge!(host: '_default-studio.code.org')
-  headers.merge!('X-Forwarded-Proto' => 'https') if https
-  header_string = headers.map { |key, value| "-H \"#{key}: #{value}\"" }.join(' ')
-  cookie_string = cookies.empty? ? '' : "--cookie \"#{cookies.map{|k,v|"#{k}=#{v}"}.join(';')}\""
-  `curl -s #{cookie_string} #{header_string} -i localhost:80#{url}`.tap{assert_equal 0, $?.exitstatus}
+  headers.merge!('X-Forwarded-Proto' => 'https')
+  _request("localhost:80#{url}", headers, cookies)
 end
 
 def code(response)
@@ -128,9 +130,9 @@ describe 'http' do
   end
 
   it 'redirects HTTP to HTTPS' do
-    response = proxy_request '/https', false
+    response = _request 'localhost:80/https'
     assert_equal 301, code(response)
-    assert_equal 'https://_default-studio.code.org/https', /Location: ([^\s]+)/.match(response)[1]
+    assert_equal 'https://localhost/https', /Location: ([^\s]+)/.match(response)[1]
   end
 
   it 'separately caches responses that vary on X-Varnish-Accept-Language' do
@@ -140,16 +142,16 @@ describe 'http' do
     mock_url(url, text_en, {'X-Varnish-Accept-Language' => 'en'}, {vary: 'X-Varnish-Accept-Language'})
     mock_url(url, text_fr, {'X-Varnish-Accept-Language' => 'fr'}, {vary: 'X-Varnish-Accept-Language'})
     en = {'Accept-Language' => 'en'}
-    response = proxy_request url, true, en
+    response = proxy_request url, en
     assert_miss response
     assert_equal text_en, response.lines.last.strip
-    assert_hit proxy_request url, true, en
+    assert_hit proxy_request url, en
 
     fr = {'Accept-Language' => 'fr'}
-    response = proxy_request url, true, fr
+    response = proxy_request url, fr
     assert_miss response
     assert_equal text_fr, response.lines.last.strip
-    assert_hit proxy_request url, true, fr
+    assert_hit proxy_request url, fr
   end
 
   it 'Strips all request/response cookies from static-asset URLs' do
@@ -169,11 +171,11 @@ describe 'http' do
     refute_nil /Cookie: [^\s]+/.match(response)
 
     # Cache strips request cookie and strips response cookie
-    response = proxy_request url, true, {}, {cookie_key: 'cookie_value'}
+    response = proxy_request url, {}, {cookie_key: 'cookie_value'}
     assert_equal text, response.lines.last.strip
     assert_nil /Cookie: [^\s]+/.match(response)
     # Cache hit on changed cookies
-    assert_hit proxy_request url, true, {}, {cookie_key: 'cookie_value3', key2: 'value2'}
+    assert_hit proxy_request url, {}, {cookie_key: 'cookie_value3', key2: 'value2'}
   end
 
   it 'Allows whitelisted request cookie to affect cache behavior' do
@@ -187,12 +189,12 @@ describe 'http' do
     mock_url(url, text_cookie_2, {'Cookie' => "#{cookie}=456;"})
 
     # Cache passes request cookie to origin
-    response = proxy_request url, true, {}, {"#{cookie}" => '123'}
+    response = proxy_request url, {}, {"#{cookie}" => '123'}
     assert_equal text_cookie, response.lines.last.strip
     assert_miss response
 
     # Cache miss on changed cookies
-    response = proxy_request url, true, {}, {"#{cookie}" => '456'}
+    response = proxy_request url, {}, {"#{cookie}" => '456'}
     assert_equal text_cookie_2, response.lines.last.strip
     assert_miss response
   end
@@ -211,7 +213,7 @@ describe 'http' do
     assert_miss response
 
     # Cache strips non-whitelisted request cookie and hits original cached response
-    response = proxy_request url, true, {}, {"#{cookie}" => '123'}
+    response = proxy_request url, {}, {"#{cookie}" => '123'}
     assert_equal text, response.lines.last.strip
     assert_hit response
   end

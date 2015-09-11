@@ -258,8 +258,8 @@ end
         req.url ~ "^/v2/" ||
         req.url ~ "^/v3/" ||
         req.url ~ "^/api/" ||
-        req.url == "/private" ||
-        req.url ~ "^/private/" ||
+        req.url ~ "^/private" ||
+# Todo: Collapse these paths into /private to simplify Pegasus caching config
         req.url ~ "^/create-company-profile" ||
         req.url ~ "^/edit-company-profile" ||
         req.url ~ "^/teacher-dashboard" ||
@@ -278,11 +278,6 @@ end
       # aren't any cookie headers, Varnish's default behavior will be to cache
       # the page.
       unset req.http.Cookie;
-    }
-    else {
-      # If there are any cookies left (a session or NO_CACHE cookie), do not
-      # cache the page. Pass it on to the backend directly.
-      return (pass);
     }
   }
 ###

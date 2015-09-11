@@ -115,6 +115,8 @@ sub vcl_recv
     return(synth(200, "Varnish is healthy."));
   }
 
+### REDIRECTS
+
   if(req.http.host ~ "\.$")
   {
     /* Don't allow domain names that end in "." */
@@ -170,14 +172,17 @@ sub vcl_recv
   if(req.http.X-Forwarded-Proto !~ "(?i)https") {
     return(synth(751, "https://" + req.http.host + req.url));
   }
-
-  C{
-      vcl_rewrite_accept_language(ctx);
-  }C
+###
 
   if(req.http.Cookie) {
     cookie.parse(req.http.Cookie);
   }
+
+### Accept-Language HEADER
+
+  C{
+      vcl_rewrite_accept_language(ctx);
+  }C
 
   /*
   ** Convert language cookie into X-Varnish-Accept-Language header
@@ -190,6 +195,9 @@ node['cdo-apps']['i18n']['languages'].to_hash.keys.each do |language|
 %><%= js %><%
 end
 %>
+###
+
+### PROXIES
 
   if (req.http.host == "<%= canonical_hostname('learn.code.org') %>" ||
       req.http.host == "<%= canonical_hostname('studio.code.org') %>" ||
@@ -203,6 +211,7 @@ end
     }
     else
     {
+      # Route to Dashboard for studio.code.org
       set req.backend_hint = dashboard.backend();
     }
   }
@@ -224,8 +233,12 @@ end
   }
   else
   {
+    # Route to Pegasus by default
     set req.backend_hint = default.backend();
   }
+###
+
+### REQUEST COOKIE FILTER
 
   # Always cache the following file types for all users.
   if( (req.url ~ "(?i)\.(cur|pdf|png|gif|jpeg|jpg|ico|mp3|swf|css|js)(\?[a-z0-9]+)?$") && (!(req.url ~ "^/api/")) ) {
@@ -238,9 +251,7 @@ end
   # Varnish cache temporarily. The session cookie allows all authenticated users
   # to pass through as long as they're logged in.
   if (req.http.Cookie) {
-    if (req.url ~ "^/auth") {
-      cookie.filter_except("cdo-private,hour_of_code,NO_CACHE");
-    } else if (
+    if (
         req.http.host == "<%= canonical_hostname('learn.code.org') %>" ||
         req.http.host == "<%= canonical_hostname('studio.code.org') %>" ||
         req.url ~ "^/dashboardapi/" ||
@@ -274,6 +285,7 @@ end
       return (pass);
     }
   }
+###
 
   # Pass-through to builtin.
 }
@@ -282,30 +294,31 @@ end
 # beresp == Back-end response from the web server.
 sub vcl_backend_response {
 
+### RESPONSE COOKIE FILTER
   if (
     bereq.url ~ "^/api/hour/begin/" ||
-    bereq.url ~ "^/api/hour/begin_" ||
-    bereq.url ~ "^/auth$" ||
-    bereq.url ~ "^/auth/"
+    bereq.url ~ "^/api/hour/begin_"
   ) {
     # allow this route to always set cookies.
   } else if (bereq.url ~ "(?i)\.(png|gif|jpeg|jpg|ico|swf|css|js)(\?[a-z0-9]+)?$") {
     # Don't allow static files to set cookies.
     unset beresp.http.set-cookie;
   }
-  else if (beresp.http.Cache-Control) {
-    unset beresp.http.Expires;
-  }
+###
 
-  if (beresp.status == 301) {
-    set beresp.ttl = 1h;
-    return(deliver);
+  if (beresp.http.Cache-Control) {
+    # Cache-Control: max-age directive overrides the Expires header.
+    # This line is not strictly necessary, but appropriate for a default http-cache config.
+    unset beresp.http.Expires;
   }
 
   # Keep all objects for 1h longer in the cache than their TTL specifies.
   # So even if HTTP objects are expired (they've passed their TTL), we can still use them in case all backends go down.
-  # Remember: old content to show is better than no content at all (or an error page).
+  # Old content to show is better than no content at all (or an error page).
+  # Ref: https://www.varnish-cache.org/docs/4.0/users-guide/vcl-grace.html
   set beresp.grace = 1h;
+
+  # Pass-through to builtin.
 }
 
 sub vcl_deliver {

@@ -103,7 +103,7 @@ def cloudfront_config(cloudfront, config)
     caller_reference: Digest::MD5.hexdigest(Marshal.dump(config)), # required
     aliases: {
       quantity: cloudfront[:aliases].length, # required
-      items: cloudfront[:aliases],
+      items: cloudfront[:aliases].empty? ? nil : cloudfront[:aliases],
     },
     origins: {# required
       quantity: 1, # required
@@ -122,7 +122,7 @@ def cloudfront_config(cloudfront, config)
     default_cache_behavior: cache_behavior(config[:default]),
     cache_behaviors: {
       quantity: behaviors.length, # required
-      items: behaviors,
+      items: behaviors.empty? ? nil : behaviors,
     },
     custom_error_responses: {
       quantity: 0 # required
@@ -131,7 +131,7 @@ def cloudfront_config(cloudfront, config)
     logging: {
       enabled: !!cloudfront[:log], # required
       include_cookies: false, # required
-      bucket: cloudfront[:log] && cloudfront[:log][:bucket], # required
+      bucket: cloudfront[:log] && "#{cloudfront[:log][:bucket]}.s3.amazonaws.com", # required
       prefix: cloudfront[:log] && cloudfront[:log][:prefix], # required
     },
     price_class: 'PriceClass_All', # accepts PriceClass_100, PriceClass_200, PriceClass_All
@@ -140,9 +140,10 @@ def cloudfront_config(cloudfront, config)
       iam_certificate_id: cloudfront[:iam_certificate_id],
       ssl_support_method: 'sni-only', # accepts sni-only, vip
       minimum_protocol_version: 'TLSv1', # accepts SSLv3, TLSv1
+      cloud_front_default_certificate: false
     } : {
-      cloud_front_default_certificate: false,
-      minimum_protocol_version: 'TLSv1', # accepts SSLv3, TLSv1
+      cloud_front_default_certificate: true,
+      minimum_protocol_version: 'TLSv1' # accepts SSLv3, TLSv1
     },
     restrictions: {
       geo_restriction: {# required
@@ -163,14 +164,14 @@ def cache_behavior(config, path=nil)
         forward: 'whitelist', # required, accepts none, whitelist, all
         whitelisted_names: {
           quantity: config[:cookies].length, # required
-          items: config[:cookies],
+          items: (config[:cookies].empty? ? nil : config[:cookies]),
         }
       } : {
         forward: config[:cookies]
       },
       headers: {
         quantity: config[:headers].length, # required
-        items: config[:headers],
+        items: config[:headers].empty? ? nil : config[:headers],
       },
     },
     trusted_signers: {# required

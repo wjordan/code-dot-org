@@ -4,16 +4,16 @@ require 'digest'
 # Cloudfront-specific configuration.
 CDO.cloudfront = {
   pegasus: {
-    aliases: %w(code.org *.code.org),
-    origin: 'pegasus.code.org',
+    aliases: %w(pegasus-cdn.code.org),
+    origin: 'code.org',
     log: {
       bucket: 'cdo-logs',
       prefix: "#{ENV['RACK_ENV']}-pegasus-cdn"
     }
   },
   dashboard: {
-    aliases: %w(*.code.org),
-    origin: 'dashboard.code.org',
+    aliases: %w(dashboard-cdn.code.org),
+    origin: 'studio.code.org',
     log: {
       bucket: 'cdo-logs',
       prefix: "#{ENV['RACK_ENV']}-dashboard-cdn"
@@ -105,6 +105,7 @@ def cloudfront_config(cloudfront, config)
       quantity: cloudfront[:aliases].length, # required
       items: cloudfront[:aliases].empty? ? nil : cloudfront[:aliases],
     },
+    default_root_object: '',
     origins: {# required
       quantity: 1, # required
       items: [

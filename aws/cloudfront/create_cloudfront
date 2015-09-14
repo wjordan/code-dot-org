@@ -15,7 +15,7 @@ cloudfront = Aws::CloudFront::Client.new(
   access_key_id: CDO.s3_access_key_id,
   secret_access_key: CDO.s3_secret_access_key
 )
-new_config = cloudfront_config(CDO.cloudfront[:pegasus], CDO.http_cache[:pegasus])
+new_config = cloudfront_config(CDO.cloudfront[:pegasus].merge(iam_certificate_id: CDO.iam_certificate_id), CDO.http_cache[:pegasus])
 response = cloudfront.create_distribution(
   distribution_config: new_config
 )
@@ -23,3 +23,4 @@ cloudfront.wait_until(:distribution_deployed, id: response.distribution.id) do |
   waiter.before_wait { |_| puts 'Waiting for distribution to deploy..' }
 end
 puts 'Distribution creation complete!'
+puts "id: #{response.distribution.id}"

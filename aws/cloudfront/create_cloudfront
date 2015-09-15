@@ -10,11 +10,7 @@ puts "Cloudfront Config: #{cloudfront_config(CDO.cloudfront[:pegasus].merge(iam_
 # Default region for storing CloudFront distributions.
 CF_REGION = 'us-east-1'
 
-cloudfront = Aws::CloudFront::Client.new(
-  region: CF_REGION,
-  access_key_id: CDO.s3_access_key_id,
-  secret_access_key: CDO.s3_secret_access_key
-)
+cloudfront = Aws::CloudFront::Client.new(region: CDO.s3_region)
 new_config = cloudfront_config(CDO.cloudfront[:pegasus].merge(iam_certificate_id: CDO.iam_certificate_id), CDO.http_cache[:pegasus])
 response = cloudfront.create_distribution(
   distribution_config: new_config

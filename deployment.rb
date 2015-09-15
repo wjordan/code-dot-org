@@ -88,7 +88,8 @@ def load_configuration()
     'pusher_application_key'      => 'fake_application_key',
     'pusher_application_secret'   => 'fake_application_secret',
     'videos_s3_bucket'            => 'videos.code.org',
-    'videos_url'                  => '//videos.code.org'
+    'videos_url'                  => '//videos.code.org',
+    's3_region'                   => 'us-east-1'
   }.tap do |config|
     raise "'#{rack_env}' is not known environment." unless config['rack_envs'].include?(rack_env)
     ENV['RACK_ENV'] = rack_env.to_s unless ENV['RACK_ENV']
@@ -105,6 +106,18 @@ def load_configuration()
     config['dashboard_db_writer'] ||= config['db_writer'] + config['dashboard_db_name']
     config['pegasus_db_reader']   ||= config['db_reader'] + config['pegasus_db_name']
     config['pegasus_db_writer']   ||= config['db_writer'] + config['pegasus_db_name']
+
+    # Set global aws-sdk credentials
+    if config['s3_access_key_id'] && config['s3_secret_access_key']
+      require 'aws-sdk'
+      Aws.config.update({
+          region: config['s3_region'],
+          credentials: Aws::Credentials.new(
+            config['s3_access_key_id'],
+            config['s3_secret_access_key']
+          )
+        })
+    end
   end
 end
 

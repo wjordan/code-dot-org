@@ -6,6 +6,8 @@ CDO.cloudfront = {
   pegasus: {
     aliases: %w(pegasus-cdn.code.org),
     origin: 'code.org',
+    # IAM server certificate name
+    ssl_cert: 'codeorg-cloudfront',
     log: {
       bucket: 'cdo-logs',
       prefix: "#{ENV['RACK_ENV']}-pegasus-cdn"
@@ -14,12 +16,12 @@ CDO.cloudfront = {
   dashboard: {
     aliases: %w(dashboard-cdn.code.org),
     origin: 'studio.code.org',
+    ssl_cert: 'codeorg-cloudfront',
     log: {
       bucket: 'cdo-logs',
       prefix: "#{ENV['RACK_ENV']}-dashboard-cdn"
     }
   }
-  # For custom-domain SSL, upload certificate to AWS and provide `CDO.cloudfront.iam_certificate_id` through local config
 }
 
 ALL_COOKIES = %w(
@@ -51,7 +53,6 @@ CDO.http_cache = {
       # Dashboard-based API paths in Pegasus are session-specific, whitelist all session cookies and language headers.
       {
         path: %w(
-          dashboardapi/*
           v2/*
           v3/*
           private*
@@ -68,6 +69,12 @@ CDO.http_cache = {
         ),
         headers: LANGUAGE_HEADER,
         cookies: ALL_COOKIES
+      },
+      {
+        path: 'dashboardapi/*',
+        proxy: 'studio.code.org',
+        headers: LANGUAGE_HEADER,
+        cookies: ALL_COOKIES
       }
     ],
     # Default Pegasus paths are cached but language-specific, whitelist only language cookies/headers.
@@ -77,7 +84,15 @@ CDO.http_cache = {
     }
   },
   dashboard: {
-    behaviors: [ STATIC_ASSETS ],
+    behaviors: [
+      STATIC_ASSETS,
+      {
+        path: 'v2/*',
+        proxy: 'code.org/v2',
+        headers: LANGUAGE_HEADER,
+        cookies: ALL_COOKIES
+      }
+    ],
     # Default Dashboard paths are session-specific, whitelist all session cookies and language headers.
     default: {
       headers: LANGUAGE_HEADER,
@@ -99,6 +114,7 @@ def cloudfront_config(cloudfront, config)
     end
   end.flatten
 
+  ssl_cert = cloudfront[:ssl_cert] &&
   {
     caller_reference: Digest::MD5.hexdigest(Marshal.dump(config)), # required
     aliases: {
@@ -112,6 +128,7 @@ def cloudfront_config(cloudfront, config)
         {
           id: 'cdo', # required
           domain_name: cloudfront[:origin], # required
+          origin_path: '',
           custom_origin_config: {
             http_port: 80, # required
             https_port: 443, # required
@@ -137,8 +154,11 @@ def cloudfront_config(cloudfront, config)
     },
     price_class: 'PriceClass_All', # accepts PriceClass_100, PriceClass_200, PriceClass_All
     enabled: true, # required
-    viewer_certificate: cloudfront[:iam_certificate_id] ? {
-      iam_certificate_id: cloudfront[:iam_certificate_id],
+    viewer_certificate: cloudfront[:ssl_cert] ? {
+      # Lookup IAM Certificate ID from server certificate name
+      iam_certificate_id: Aws::IAM::Client.new(region: CDO.s3_region)
+        .get_server_certificate(server_certificate_name: cloudfront[:ssl_cert])
+        .server_certificate.server_certificate_metadata.server_certificate_id,
       ssl_support_method: 'sni-only', # accepts sni-only, vip
       minimum_protocol_version: 'TLSv1', # accepts SSLv3, TLSv1
       cloud_front_default_certificate: false

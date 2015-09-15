@@ -5,24 +5,17 @@ require_relative '../../deployment'
 require 'aws-sdk'
 require_relative './cloudfront'
 
-# Default region for storing CloudFront distributions.
-CF_REGION = 'us-east-1'
-
-cloudfront = Aws::CloudFront::Client.new(
-  region: CF_REGION,
-  access_key_id: CDO.s3_access_key_id,
-  secret_access_key: CDO.s3_secret_access_key
-)
-distribution_id = CDO.cloudfront_pegasus_id
-config = cloudfront.get_distribution_config(id: distribution_id)
-new_config = cloudfront_config(CDO.cloudfront[:pegasus].merge(iam_certificate_id: CDO.iam_certificate_id), CDO.http_cache[:pegasus])
-puts "Config: #{config.distribution_config}"
+cloudfront = Aws::CloudFront::Client.new(region: CDO.s3_region)
+id = CDO.cloudfront_pegasus_id
+config = cloudfront.get_distribution_config(id: id)
+new_config = cloudfront_config(CDO.cloudfront[:pegasus], CDO.http_cache[:pegasus])
 cloudfront.update_distribution(
-  id: distribution_id,
+  id: id,
   if_match: config.etag,
   distribution_config: new_config
 )
-cloudfront.wait_until(:distribution_deployed, id: distribution_id) do |waiter|
+puts 'Distribution updated!'
+cloudfront.wait_until(:distribution_deployed, id: id) do |waiter|
   waiter.before_wait { |_| puts 'Waiting for distribution to deploy..' }
 end
-puts 'Distribution update complete!'
+puts 'Distribution deployed!'

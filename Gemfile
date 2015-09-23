@@ -170,3 +170,5 @@ gem 'viddl-rb', group: [:development, :staging, :levelbuilder]
 gem 'net-ssh'
 gem 'net-scp'
 gem 'httparty'
+
+gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git', group: :test if ENV['CIRCLECI']

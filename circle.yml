@@ -1,5 +1,5 @@
 general:
-  build_dir: dashboard/cookbooks
+  build_dir: cookbooks
 test:
   override:
     - ./test.sh

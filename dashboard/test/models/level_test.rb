@@ -1,5 +1,4 @@
 gem 'mocha'
-require 'test/unit'
 require 'mocha/api'
 require 'mocha/test_unit'
 require 'test_helper'

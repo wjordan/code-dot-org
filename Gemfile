@@ -58,10 +58,10 @@ group :development, :test do
   gem 'colorize'
   gem 'spring'
   gem 'spring-commands-testunit'
-  gem "test-unit", "~> 3.0"
   gem "minitest", "~> 5.5"
   gem 'minitest-reporters'
   gem 'eyes_selenium', '~> 2.5.0'
+  gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git' if ENV['CIRCLECI']
 end
 
 group :doc do
@@ -170,5 +170,3 @@ gem 'viddl-rb', group: [:development, :staging, :levelbuilder]
 gem 'net-ssh'
 gem 'net-scp'
 gem 'httparty'
-
-gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git', group: :test

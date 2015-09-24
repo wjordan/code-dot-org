@@ -5,7 +5,7 @@ dependencies:
     without: [development]
 database:
   post:
-    - RAILS_ENV=test bundle exec rake seed:all
+    - RAILS_ENV=test bundle exec rake seed:all -t
 test:
   minitest_globs:
     - test/**/*_test.rb

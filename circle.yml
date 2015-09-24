@@ -1,12 +1,12 @@
 general:
   build_dir: dashboard
-  minitest_globs:
-    test/**/*_test.rb
-    ../pegasus/test/test_*.rb
-    ../shared/test/test_*.rb
 dependencies:
   bundler:
     without: [development]
 test:
   pre:
     - bundle exec rake seed:all
+  minitest_globs:
+    test/**/*_test.rb
+    ../pegasus/test/test_*.rb
+    ../shared/test/test_*.rb

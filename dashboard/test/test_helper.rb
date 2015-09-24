@@ -2,12 +2,11 @@
 #  require 'simplecov'
 #  SimpleCov.start :rails
 
-require 'minitest'
+require 'minitest/reporters'
 if ENV['CIRCLECI']
   require 'minitest/ci'
   reporter = Minitest::Ci.new
 else
-  require 'minitest/reporters'
   reporter = $stdout.tty? ? Minitest::Reporters::ProgressReporter.new : Minitest::Reporters::DefaultReporter.new
 end
 

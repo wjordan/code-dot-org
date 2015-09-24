@@ -2,6 +2,7 @@
 #  require 'simplecov'
 #  SimpleCov.start :rails
 
+require 'minitest'
 if ENV['CIRCLECI']
   require 'minitest/ci'
   reporter = Minitest::Ci.new

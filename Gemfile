@@ -171,4 +171,4 @@ gem 'net-ssh'
 gem 'net-scp'
 gem 'httparty'
 
-gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git', group: :test if ENV['CIRCLECI']
+gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git', require: false, group: :test

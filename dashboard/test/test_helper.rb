@@ -5,7 +5,7 @@
 require 'minitest/reporters'
 if ENV['CIRCLECI']
   require 'minitest/ci'
-  reporter = Minitest::Ci.new
+  reporter = Minitest::Ci.new($stdout, ci_dir: ENV['CIRCLE_TEST_REPORTS'])
   MiniTest::Reporters.use_runner!(reporter, ENV)
 else
   reporter = $stdout.tty? ? Minitest::Reporters::ProgressReporter.new : Minitest::Reporters::DefaultReporter.new

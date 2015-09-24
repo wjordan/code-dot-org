@@ -7,7 +7,10 @@ reporters = $stdout.tty? ?
   [Minitest::Reporters::DefaultReporter.new] :
   [Minitest::Reporters::ProgressReporter.new]
 if ENV['CIRCLE_TEST_REPORTS']
-  reporters << Minitest::Reporters::JUnitReporter.new(ENV['CIRCLE_TEST_REPORTS'])
+  reporters = [
+    Minitest::Reporters::SpecReporter.new,
+    Minitest::Reporters::JUnitReporter.new(ENV['CIRCLE_TEST_REPORTS'])
+  ]
 end
 MiniTest::Reporters.use!(reporters)
 

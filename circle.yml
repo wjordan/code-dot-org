@@ -1,13 +1,17 @@
+machine:
+  environment:
+    RAILS_ENV: test
+    RACK_ENV: test
 general:
   build_dir: dashboard
 dependencies:
   bundler:
     without: [development]
-database:
-  post:
-    - RAILS_ENV=test bundle exec rake seed:all -t
 test:
-  minitest_globs:
-    - test/**/*_test.rb
-    - ../pegasus/test/test_*.rb
-    - ../shared/test/test_*.rb
+  override:
+    - bundle exec rake test TESTOPTS="--ci-dir=$CIRCLE_TEST_REPORTS":
+        parallel: true
+        files:
+          - test/**/*_test.rb
+          - ../pegasus/test/test_*.rb
+          - ../shared/test/test_*.rb

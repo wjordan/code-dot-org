@@ -1,4 +1,4 @@
 #!/bin/bash
 
 bundle install -j`nproc`
-(cd cdo-ruby; kitchen verify)
+(cd cdo-ruby; bundle exec kitchen verify)

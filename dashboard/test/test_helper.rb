@@ -4,8 +4,8 @@
 
 require 'minitest/reporters'
 reporters = $stdout.tty? ?
-  Minitest::Reporters::DefaultReporter.new :
-  Minitest::Reporters::ProgressReporter.new
+  [Minitest::Reporters::DefaultReporter.new] :
+  [Minitest::Reporters::ProgressReporter.new]
 if ENV['CIRCLE_TEST_REPORTS']
   reporters << Minitest::Reporters::JUnitReporter.new(ENV['CIRCLE_TEST_REPORTS'])
 end

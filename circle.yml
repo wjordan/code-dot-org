@@ -1,2 +1,5 @@
+machine:
+  environment:
+    RAKEOPT: -t
 general:
   build_dir: dashboard

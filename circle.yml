@@ -3,9 +3,10 @@ general:
 dependencies:
   bundler:
     without: [development]
+database:
+  post:
+    - RAILS_ENV=test bundle exec rake seed:all
 test:
-  pre:
-    - bundle exec rake seed:all
   minitest_globs:
     - test/**/*_test.rb
     - ../pegasus/test/test_*.rb

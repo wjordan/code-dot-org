@@ -61,7 +61,6 @@ group :development, :test do
   gem "minitest", "~> 5.5"
   gem 'minitest-reporters'
   gem 'eyes_selenium', '~> 2.5.0'
-  gem 'minitest-ci', git: 'git@github.com:circleci/minitest-ci.git' if ENV['CIRCLECI']
 end
 
 group :doc do

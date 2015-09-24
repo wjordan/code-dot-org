@@ -3,8 +3,13 @@
 #  SimpleCov.start :rails
 
 require 'minitest/reporters'
-reporter = $stdout.tty? ? Minitest::Reporters::ProgressReporter.new : Minitest::Reporters::DefaultReporter.new
-MiniTest::Reporters.use!(reporter)
+reporters = $stdout.tty? ?
+  Minitest::Reporters::DefaultReporter.new :
+  Minitest::Reporters::ProgressReporter.new
+if ENV['CIRCLE_TEST_REPORTS']
+  reporters << Minitest::Reporters::JUnitReporter.new(ENV['CIRCLE_TEST_REPORTS'])
+end
+MiniTest::Reporters.use!(reporters)
 
 ENV["RAILS_ENV"] = "test"
 ENV["RACK_ENV"] = "test"

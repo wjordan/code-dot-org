@@ -6,11 +6,12 @@ require 'minitest/reporters'
 if ENV['CIRCLECI']
   require 'minitest/ci'
   reporter = Minitest::Ci.new
+  MiniTest::Reporters.use_runner!(reporter, ENV)
 else
   reporter = $stdout.tty? ? Minitest::Reporters::ProgressReporter.new : Minitest::Reporters::DefaultReporter.new
+  MiniTest::Reporters.use!(reporter)
 end
 
-MiniTest::Reporters.use!(reporter)
 
 ENV["RAILS_ENV"] = "test"
 ENV["RACK_ENV"] = "test"

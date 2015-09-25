@@ -704,6 +704,7 @@ class ScriptLevelsControllerTest < ActionController::TestCase
   end
 
   test 'over 13 does not get redirected when trying to access applab' do
+    skip 'Disabled (Unknown database pegasus_test)' if ENV['CIRCLECI']
     sl = ScriptLevel.find_by_script_id_and_level_id(Script.find_by_name('allthethings'), Level.find_by_key('U3L2 Using Simple Commands'))
 
     sign_in @student

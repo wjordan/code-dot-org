@@ -1,0 +1,11 @@
+general:
+  build_dir: cookbooks
+machine:
+  services:
+    - docker
+dependencies:
+  post:
+    - docker info
+test:
+  override:
+    - ./test.sh

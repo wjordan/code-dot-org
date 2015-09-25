@@ -2,4 +2,4 @@
 
 # Run cookbook integration tests using Chef Kitchen.
 bundle install -j`nproc`
-(cd cdo-nodejs; kitchen verify)
+(cd cdo-nodejs; bundle exec kitchen verify)

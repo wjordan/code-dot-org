@@ -23,6 +23,8 @@
 # Levels defined using a text-based ruby DSL syntax.
 # See #BaseDSL for the DSL format implementation.
 class DSLDefined < Level
+  cattr_accessor :parse_times
+  @@parse_times = {}
   include Seeded
   after_destroy :delete_level_file
 
@@ -30,12 +32,11 @@ class DSLDefined < Level
     "Enter the level definition here.\n"
   end
 
-  def self.setup(data)
-    level = find_or_create_by({ name: data[:name] })
+  def self.setup(data, levels)
+    name = data[:name]
+    level = levels[name] || new(name: name)
     level.send(:write_attribute, 'properties', {})
-
-    level.update!(name: data[:name], game_id: Game.find_by(name: self.to_s).id, properties: data[:properties])
-
+    level.assign_attributes(name: name, game_id: Game.by_name(self.to_s), properties: data[:properties])
     level
   end
 
@@ -45,7 +46,11 @@ class DSLDefined < Level
 
   # Use DSL class to parse file
   def self.parse_file(filename, name=nil)
-    parse(File.read(filename), filename, name)
+    start = Time.now.to_f
+    file_data = File.read(filename)
+    parse(file_data, filename, name).tap do |x|
+      parse_times[filename] = Time.now.to_f - start
+    end
   end
 
   # Use DSL class to parse string

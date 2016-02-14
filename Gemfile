@@ -1,7 +1,9 @@
 source 'https://rubygems.org'
 
+gem 'json', '1.8.1'
+
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 4.2.4'
+gem 'rails', '~> 4.2.5'
 
 # provide `respond_to` methods
 # (see: http://guides.rubyonrails.org/4_2_release_notes.html#respond-with-class-level-respond-to)
@@ -10,7 +12,7 @@ gem 'responders', '~> 2.0'
 gem 'sinatra', require: 'sinatra/base'
 gem 'rack-contrib', '~> 1.1'
 
-gem 'mysql2', '~> 0.3.13'
+gem 'mysql2', '0.4.2'
 gem 'seamless_database_pool'
 
 gem 'le', '~> 2.2'
@@ -75,7 +77,9 @@ group :doc do
   gem 'sdoc', require: false
 end
 
-gem 'unicorn', '~> 4.8.2'
+gem 'unicorn', '~> 4.8.3'
+gem 'kgio', '2.9.3'
+gem 'raindrops', '0.13.0'
 
 gem 'chronic', '~> 0.10.2'
 
@@ -108,7 +112,7 @@ gem 'haml'
 
 gem 'jquery-ui-rails', '~> 5.0.3'
 
-gem 'nokogiri', '~> 1.6.1'
+gem 'nokogiri', '1.6.6.2'
 
 gem 'highline', '~> 1.6.21'
 
@@ -135,7 +139,8 @@ gem 'retryable' # retry code blocks when they throw exceptions
 
 # Used by a build script.
 gem 'execjs'
-gem 'therubyracer', '~> 0.12.2', platforms: :ruby
+
+#gem 'therubyracer', '~> 0.12.2', platforms: :ruby
 
 gem 'jwt' # single signon for zendesk
 

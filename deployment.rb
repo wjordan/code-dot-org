@@ -32,6 +32,7 @@ def load_configuration()
 
   global_config = load_yaml_file(File.join(root_dir, 'globals.yml')) || {}
   local_config = load_yaml_file(File.join(root_dir, 'locals.yml')) || {}
+  local_config.merge!(ENV.select{|k, v| k.match(/^CDO_/)}.map{|k,v|[k.gsub(/^CDO_/,'').downcase,v]}.to_h)
 
   env = local_config['env'] || global_config['env'] || ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'development'
 

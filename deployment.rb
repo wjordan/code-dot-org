@@ -325,3 +325,15 @@ end
 def code_studio_dir(*dirs)
   deploy_dir('code-studio', *dirs)
 end
+
+def log_dir(*dirs)
+  rack_env?(:adhoc) ?
+    home_dir('log', *dirs) :
+    dashboard_dir('log', *dirs)
+end
+
+def tmp_dir(*dirs)
+  rack_env?(:adhoc) ?
+    home_dir('tmp', *dirs) :
+    dashboard_dir('tmp', *dirs)
+end

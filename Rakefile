@@ -149,11 +149,11 @@ namespace :build do
 
       if CDO.daemon
         HipChat.log 'Migrating <b>dashboard</b> database...'
-        RakeUtils.rake 'db:migrate'
+        RakeUtils.rake 'db:setup_or_migrate'
 
         # Update the schema cache file, except for production which always uses the cache.
         schema_cache_file = dashboard_dir('db/schema_cache.dump')
-        unless rack_env?(:production)
+        unless rack_env?(:production, :adhoc)
           RakeUtils.rake 'db:schema:cache:dump'
           if RakeUtils.file_changed_from_git?(schema_cache_file)
             # Staging is responsible for committing the authoritative schema cache dump.
@@ -170,7 +170,7 @@ namespace :build do
         end
 
         HipChat.log 'Seeding <b>dashboard</b>...'
-        RakeUtils.rake 'seed:all'
+        RakeUtils.rake 'seed:incremental'
       end
 
       unless rack_env?(:development)

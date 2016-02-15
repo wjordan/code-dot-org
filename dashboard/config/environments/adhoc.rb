@@ -4,6 +4,14 @@
 require 'tmpdir'
 require Rails.root.join('config/environments/staging')
 
+module Sprockets
+  module Rails
+    class Task < Rake::SprocketsTask
+      def output; tmp_dir 'assets' end
+    end
+  end
+end
+
 Dashboard::Application.configure do
 
   # Code is not reloaded between requests.

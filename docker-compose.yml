@@ -1,0 +1,23 @@
+version: '2'
+services:
+  web:
+    image: wjordan/alpine-cdo
+#    command: /bin/sh -c "cd /cdo; bundle exec rake build"
+    command: /bin/sh -c "cd /cdo/dashboard; bundle exec rake assets:precompile"
+    environment:
+      RACK_ENV: adhoc
+      RAILS_ENV: adhoc
+      BUNDLE_WITHOUT: development:staging:test:levelbuilder:production:integration
+      CDO_DB_READER: 'mysql://root@db/'
+      CDO_DB_WRITER: 'mysql://root@db/'
+      CDO_DAEMON: true
+    links:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/cdo:ro
+  db:
+    image: mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1

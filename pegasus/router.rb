@@ -190,6 +190,13 @@ class Documents < Sinatra::Base
     css
   end
 
+  get '/test.br' do
+    content_type 'text/plain'
+    headers['Content-Encoding'] = 'br'
+    cache :static
+    "\x8B\x00\x80ok\x03" # Brotli-encoded 'ok'
+  end
+
   # rubocop:disable Lint/Eval
   Dir.glob(pegasus_dir('routes/*.rb')).sort.each {|path| eval(IO.read(path), nil, path, 1)}
   # rubocop:enable Lint/Eval

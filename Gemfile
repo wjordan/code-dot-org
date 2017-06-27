@@ -21,6 +21,9 @@ gem 'sprockets-rails'
 # (see: http://guides.rubyonrails.org/4_2_release_notes.html#respond-with-class-level-respond-to)
 gem 'responders', '~> 2.0'
 
+# Ref: https://github.com/rack/rack/pull/1184
+gem 'rack', github: 'wjordan/rack', ref: 'select_best_encodings_sort'
+
 gem 'sinatra', '~> 2.0.0.beta2', require: 'sinatra/base'
 
 gem 'mysql2', '~> 0.3.13'
@@ -262,3 +265,4 @@ gem 'image_size', require: false
 
 # Auto strip model attributes before validation (opt in)
 gem 'auto_strip_attributes', '~> 2.1'
+gem 'brotli'

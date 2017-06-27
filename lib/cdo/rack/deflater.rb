@@ -4,12 +4,14 @@ require 'rack/deflater'
 require "zlib"
 require "time"  # for Time.httpdate
 require 'rack/utils'
+require 'brotli'
 
 module Rack
   # This middleware enables compression of http responses.
   #
   # Currently supported compression algorithms:
   #
+  #   * br
   #   * gzip
   #   * deflate
   #   * identity (no transformation)
@@ -45,8 +47,12 @@ module Rack
       request = Request.new(env)
 
       encoding = Utils.select_best_encoding(
-        %w(gzip deflate identity),
-        request.accept_encoding
+        %w(
+          br
+          gzip
+          deflate
+          identity
+        ), request.accept_encoding
       )
 
       # Set the Vary HTTP header.
@@ -58,20 +64,24 @@ module Rack
       case encoding
         when "gzip"
           headers['Content-Encoding'] = "gzip"
-          headers.delete('Content-Length')
+          headers.delete(CONTENT_LENGTH)
           mtime = headers.key?("Last-Modified") ?
             Time.httpdate(headers["Last-Modified"]) : Time.now
           [status, headers, GzipStream.new(body, mtime)]
         when "deflate"
           headers['Content-Encoding'] = "deflate"
-          headers.delete('Content-Length')
+          headers.delete(CONTENT_LENGTH)
           [status, headers, DeflateStream.new(body)]
+        when "br"
+          headers['Content-Encoding'] = "br"
+          headers.delete(CONTENT_LENGTH)
+          [status, headers, BrotliStream.new(body)]
         when "identity"
           [status, headers, body]
         when nil
           message = "An acceptable encoding for the requested resource #{request.fullpath} could not be found."
           bp = Rack::BodyProxy.new([message]) {body.close if body.respond_to?(:close)}
-          [406, {'Content-Type' => "text/plain", 'Content-Length' => message.length.to_s}, bp]
+          [406, {CONTENT_TYPE => "text/plain", CONTENT_LENGTH => message.length.to_s}, bp]
       end
     end
 
@@ -135,19 +145,44 @@ module Rack
       end
     end
 
+    class BrotliStream
+      def initialize(body, options = {})
+        @body = body
+        @options = options
+        @closed = false
+      end
+
+      def each(&block)
+        @writer = block
+        buffer = ''
+        @body.each do |part|
+          buffer << part
+        end
+        yield ::Brotli.deflate(buffer, @options)
+      ensure
+        @writer = nil
+      end
+
+      def close
+        return if @closed
+        @closed = true
+        @body.close if @body.respond_to?(:close)
+      end
+    end
+
     private
 
     def should_deflate?(env, status, headers, body)
       # Skip compressing empty entity body responses and responses with
       # no-transform set.
       if Utils::STATUS_WITH_NO_ENTITY_BODY.include?(status) ||
-        headers['Cache-Control'].to_s =~ /\bno-transform\b/ ||
+        headers[CACHE_CONTROL].to_s =~ /\bno-transform\b/ ||
         (headers['Content-Encoding'] && headers['Content-Encoding'] !~ /\bidentity\b/)
         return false
       end
 
       # Skip if @compressible_types are given and does not include request's content type
-      return false if @compressible_types && !(headers.key?('Content-Type') && @compressible_types.include?(headers['Content-Type'][/[^;]*/]))
+      return false if @compressible_types && !(headers.key?(CONTENT_TYPE) && @compressible_types.include?(headers[CONTENT_TYPE][/[^;]*/]))
 
       # Skip if @condition lambda is given and evaluates to false
       return false if @condition && !@condition.call(env, status, headers, body)

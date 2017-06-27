@@ -35,6 +35,15 @@ module Rack
             env[http_header] = value
           end
         end
+        if (enc = env['HTTP_ACCEPT_ENCODING'])
+          if enc.include? 'gzip'
+            # If the value contains gzip, CloudFront forwards Accept-Encoding: gzip to your origin.
+            env['HTTP_ACCEPT_ENCODING'] = 'gzip'
+          else
+            # If the value does not contain gzip, CloudFront removes the Accept-Encoding header field before forwarding the request to your origin.
+            env.delete 'HTTP_ACCEPT_ENCODING'
+          end
+        end
 
         cookies = behavior[:cookies]
         case cookies
@@ -53,6 +62,10 @@ module Rack
             request_cookies = request.cookies
             request_cookies.slice!(*cookies)
             cookie_str = request_cookies.map do |key, value|
+              # Normalize Brotli `br` cookie to `br` Accept-Encoding header.
+              if key == 'br' && value.to_i == 1 && (enc = env['HTTP_ACCEPT_ENCODING']) !~ /br/
+                env['HTTP_ACCEPT_ENCODING'] = enc ? "#{enc}, br" : 'br'
+              end
               env_key = "HTTP_X_COOKIE_#{key.upcase.tr('-', '_')}"
               env[env_key] = value
               Rack::Utils.escape(key) + '=' + Rack::Utils.escape(value)

@@ -12,7 +12,9 @@ class HttpCache
     # Language drop-down selection.
     'language_',
     # Page mode, for A/B experiments and feature-flag rollouts.
-    'pm'
+    'pm',
+    # Brotli encoding.
+    'br'
   ]
 
   # A map from script name to script level URL pattern.

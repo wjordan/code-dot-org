@@ -131,6 +131,16 @@ if (req.http.X-Cookie-language_) {
   unset req.http.X-Cookie-language_;
 }
 
+# Normalize Brotli `br` cookie to `br` Accept-Encoding header.
+if (req.http.X-Cookie-br == "1" && req.http.Accept-Encoding !~ "br") {
+  if (req.http.Accept-Encoding) {
+    set req.http.Accept-Encoding = req.http.Accept-Encoding + ", br";
+  } else {
+    set req.http.Accept-Encoding = "br";
+  }
+  unset req.http.X-Cookie-br;
+}
+
 ### PROXIES
 <%= setup_behavior(config, 'req', &method(:process_proxy)) %>
 ###
